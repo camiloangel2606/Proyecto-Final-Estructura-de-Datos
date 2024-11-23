@@ -1,13 +1,12 @@
-class Barrio:
+class Casa:
     def __init__(self, nombre, demanda):
         """
-        Representa un barrio de la red.
-        :param nombre: Nombre del barrio.
-        :param demanda: Cantidad de agua que requiere el barrio.
+        Representa una casa de la red.
+        :param nombre: Nombre de la casa.
+        :param demanda: Cantidad de agua que requiere la casa.
         """
         self.nombre = nombre
         self.demanda = demanda
-        self.tanques = []  # Lista de tanques que abastecen este barrio
 
 class Tanque:
     def __init__(self, id_tanque, capacidad, nivel_actual):
@@ -22,11 +21,11 @@ class Tanque:
         self.nivel_actual = nivel_actual
 
 class Conexion:
-    def __init__(self, origen, destino, capacidad, flujo=0):
+    def __init__(self, origen, destino, capacidad, flujo=0, color = "blue"):
         """
-        Representa una conexión entre un tanque y un barrio o tanque.
-        :param origen: Nodo de origen (tanque o barrio).
-        :param destino: Nodo de destino (tanque o barrio).
+        Representa una conexión entre un tanque y un casa o tanque.
+        :param origen: Nodo de origen (tanque o casa).
+        :param destino: Nodo de destino (tanque o casa).
         :param capacidad: Capacidad máxima de la tubería.
         :param flujo: Flujo actual a través de la tubería.
         """
@@ -34,3 +33,4 @@ class Conexion:
         self.destino = destino
         self.capacidad = capacidad
         self.flujo = flujo
+        self.color = color  # Color por defecto (sin obstrucción)

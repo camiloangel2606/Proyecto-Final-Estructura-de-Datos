@@ -1,4 +1,5 @@
 import networkx as nx
+import matplotlib.pyplot as plt
 from utils import RedDeAcueducto
 red = RedDeAcueducto()
 
@@ -21,28 +22,19 @@ def main():
     print("Rutas:", flujo_rutas)
 
 def menu():
-    red = RedDeAcueducto()
-    red.cargar_desde_json('data/red_acueducto.json')#Cargamos archivo json.
-    
-    # Crear el grafo
-    G = nx.DiGraph()
-    for conexion in red.conexiones:
-        G.add_edge(conexion.origen, conexion.destino, capacity=conexion.capacidad)
-    
-    # Mostrar información básica
-    print("Nodos:", G.nodes)
-    print("Conexiones:", G.edges(data=True))
-    
+    red.cargar_desde_json('data/red_acueducto.json')
+    red.visualizar_red()
     #Menú
     i = 1
     opciones = {#Opciones de funciones que se tendrán en el menú
         0: salir,
-        1: agregar_barrio,
+        1: agregar_casa,
         2: agregar_tanque,
         3: agregar_conexion,
-        4: eliminar_barrio,
+        4: eliminar_casa,
         5: eliminar_tanque,
         6: eliminar_conexion,
+        7: simular_obstruccion,
     }
     
     while i != 0:
@@ -51,9 +43,7 @@ def menu():
         print("Agregar: (1) Barrio, (2) Tanque, (3) Conexión. Al acueducto")
         print("Eliminar: (4) Barrio, (5) Tanque, (6) Conexión. Al acueducto")
         print("(0) Salir del menú")
-        i = input()
-            
-
+        
         #Validar la entrada del usuario
         try:
             i = int(input("Selecciona una opción:"))
@@ -70,27 +60,29 @@ def menu():
 #Definimos todas las opciones presentadas en el menú para así solo llamarlas al momento de ejecutar.
 def salir():
     print("Guardando actualizaciones...")
-    red.guardar_a_json()
+    red.guardar_a_json('data/red_acueducto.json')
+    red.cargar_desde_json('data/red_acueducto.json')
+    red.visualizar_red()
     print("Gracias por usar la interfaz de acueductos.")
 
 #AGREGAR BARRIO:
-def agregar_barrio():
-    print("Ingresa la información del barrio.")
+def agregar_casa():
+    print("Ingresa la información de la casa.")
     
     try:
-        nombre = input("Ingresa el nombre del barrio: ").strip()
+        nombre = input("Ingresa el nombre de la casa: ").strip()
         if not nombre:
-            print("Error: El nombre del barrio no puede estar vacío.")
+            print("Error: El nombre de la casa no puede estar vacío.")
             return
         
-        demanda = input("Ingresa la demanda que tiene el barrio: ")
+        demanda = input("Ingresa la demanda que tiene la casa: ")
         demanda = int(demanda)
         if demanda <= 0:
             print("Error: La demanda debe ser un número positivo.")
             return
         
         # Intentar agregar el barrio
-        red.agregar_barrio(nombre, demanda)
+        red.agregar_casa(nombre, demanda)
         
         # Guardar cambios en el archivo JSON
         red.guardar_a_json('data/red_acueducto.json')
@@ -152,15 +144,15 @@ def agregar_conexion():
         print(f"Error inesperado: {e}")
 
 #ELIMINAR BARRIO:
-def eliminar_barrio():
-    print("Eliminar un barrio.")
+def eliminar_casa():
+    print("Eliminar una casa.")
     try:
-        nombre = input("Ingresa el nombre del barrio a eliminar: ").strip()
+        nombre = input("Ingresa el nombre de la casa a eliminar: ").strip()
         if not nombre:
-            print("Error: El nombre del barrio no puede estar vacío.")
+            print("Error: El nombre de la casa no puede estar vacío.")
             return
         
-        red.eliminar_barrio(nombre)
+        red.eliminar_casa(nombre)
         red.guardar_a_json('data/red_acueducto.json')
     except Exception as e:
         print(f"Error inesperado: {e}")
@@ -194,7 +186,32 @@ def eliminar_conexion():
     except Exception as e:
         print(f"Error inesperado: {e}")
 
+#SIMULAR OBSTRUCCIÓN:
+def simular_obstruccion():
+    print("Simular una obstrucción")
+    try:
+        origen = input("Ingresa el nodo de origen de la obstrucción: ").strip()
+        destino = input("Ingresa el nodo de destino de la obstrucción: ").strip()
+        nivel_gravedad = float(input("Ingresa el nivel de gravedad de la obstrucción (0 - 100% ."))
+        if not origen or not destino:
+            print("Error: El origen y el destino no pueden estar vacíos.")
+            return
+        
+        red.simular_obstruccion(origen,destino,nivel_gravedad)
+        red.guardar_a_json('data/red_acueducto.json')
+    except Exception as e:
+        print(f"Error inesperado {e}")
+
+def visualizar_red(self):
+    G = self.construir_grafo()
+    
+    # Extraer colores de las aristas
+    edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
+    
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, edge_color=edge_colors, node_color="lightblue")
+    plt.show()
 
 if __name__ == "__main__":
-    main()
+    #main()
     menu()
