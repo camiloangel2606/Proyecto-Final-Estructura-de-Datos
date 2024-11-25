@@ -204,9 +204,11 @@ class RedDeAcueducto:
         return G
 
     # Visualizar la red
+    # Visualizar la red
     def visualizar_red(self):
         """
         Visualiza la red de acueducto utilizando NetworkX.
+        Muestra la demanda de cada casa y la capacidad restante de cada tanque.
         """
         G = self.construir_grafo()
 
@@ -223,18 +225,45 @@ class RedDeAcueducto:
             for u, v, data in G.edges(data=True)
         }
 
+        # Crear etiquetas y colores para nodos
+        node_labels = {}
+        node_colors = []
+
+        # Agregar casas a las etiquetas y colores
+        for casa in self.casa.values():
+            node_labels[casa.nombre] = f"{casa.nombre}\nDemanda: {casa.demanda}"
+            node_colors.append("lightblue")  # Color estándar para las casas
+
+        # Agregar tanques a las etiquetas y colores
+        for tanque in self.tanques.values():
+            capacidad_disponible = tanque.nivel_actual - sum(
+                conexion.capacidad for conexion in self.conexiones if conexion.origen == tanque.id_tanque
+            )
+            node_labels[tanque.id_tanque] = (
+                f"{tanque.id_tanque}\nCapacidad restante: {capacidad_disponible:.1f}"
+            )
+
+            # Definir color del tanque basado en capacidad disponible
+            if capacidad_disponible < 0:
+                node_colors.append("red")  # Tanques agotados
+            elif capacidad_disponible < 0.2 * tanque.capacidad:
+                node_colors.append("orange")  # Capacidad baja
+            else:
+                node_colors.append("green")  # Capacidad suficiente
+
         # Dibujar el grafo
         nx.draw(
             G,
             pos,
-            with_labels=True,
+            with_labels=False,  # Desactivamos las etiquetas predeterminadas
             edge_color=edge_colors,
-            node_color="lightblue",
+            node_color=node_colors,
             node_size=500,
             font_size=10,
             font_color="black"
         )
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
+        nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=9)
 
         # Dibujar nodos no conectados
         if nodos_no_conectados:
