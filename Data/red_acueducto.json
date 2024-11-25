@@ -14,11 +14,7 @@
         },
         {
             "nombre": "Casa4",
-            "demanda": 20
-        },
-        {
-            "nombre": "Casa5",
-            "demanda": 60
+            "demanda": 10
         }
     ],
     "tanques": [
@@ -38,5 +34,30 @@
             "nivel_actual": 60
         }
     ],
-    "conexiones": []
+    "conexiones": [
+        {
+            "origen": "Tanque1",
+            "destino": "Casa1",
+            "capacidad": 60,
+            "color": "blue"
+        },
+        {
+            "origen": "Tanque2",
+            "destino": "Casa2",
+            "capacidad": 70,
+            "color": "blue"
+        },
+        {
+            "origen": "Tanque3",
+            "destino": "Casa3",
+            "capacidad": 90,
+            "color": "blue"
+        },
+        {
+            "origen": "Tanque2",
+            "destino": "Casa4",
+            "capacidad": 70,
+            "color": "blue"
+        }
+    ]
 }

@@ -18,7 +18,7 @@ class RedDeAcueducto:
         try:
             with open(archivo_json, 'r') as file:
                 data = json.load(file)
-                print(f"Contenido del archivo JSON: {data}")  # Agregado para depuración
+                print(f"Contenido del archivo JSON: {data}")  # Depuración
 
             # Limpiar estructuras de datos existentes
             self.casa.clear()
@@ -45,13 +45,15 @@ class RedDeAcueducto:
                 self.agregar_conexion(
                     origen=conexion['origen'],
                     destino=conexion['destino'],
-                    capacidad=conexion['capacidad']
+                    capacidad=conexion['capacidad'],
+                    color=conexion.get('color', 'blue')  # Color opcional
                 )
 
             print("Red cargada con éxito.")
             self.verificar_consistencia()
         except Exception as e:
             print(f"Error al cargar el archivo JSON: {e}")
+
 
     # GUARDAR ARCHIVO JSON
     def guardar_a_json(self, archivo_json):
@@ -79,7 +81,8 @@ class RedDeAcueducto:
                     {
                         "origen": conexion.origen,
                         "destino": conexion.destino,
-                        "capacidad": conexion.capacidad
+                        "capacidad": conexion.capacidad,
+                        "color": conexion.color  # Guardar color
                     } for conexion in self.conexiones
                 ]
             }
@@ -178,23 +181,33 @@ class RedDeAcueducto:
 
     # SIMULACIONES
     def construir_grafo(self):
-        import networkx as nx
         G = nx.DiGraph()
+
+        # Agregar nodos (casas y tanques)
+        for casa in self.casa.values():
+            G.add_node(casa.nombre)
+        for tanque in self.tanques.values():
+            G.add_node(tanque.id_tanque)
+
+        # Agregar aristas (conexiones)
         for conexion in self.conexiones:
+            print(f"Añadiendo arista: origen={conexion.origen}, destino={conexion.destino}, capacidad={conexion.capacidad}, color={conexion.color}")
             G.add_edge(
                 conexion.origen,
                 conexion.destino,
                 capacity=conexion.capacidad,
-                color=getattr(conexion, 'color', 'blue')
+                color=conexion.color
             )
-        print("Nodos en el grafo:", G.nodes())
-        print("Aristas en el grafo:", G.edges(data=True))
+
+        print("Nodos en construir_grafo:", G.nodes())
+        print("Aristas en construir_grafo:", G.edges(data=True))
         return G
 
     # Visualizar la red
     def visualizar_red(self):
-        import networkx as nx
-        import matplotlib.pyplot as plt
+        """
+        Visualiza la red de acueducto utilizando NetworkX.
+        """
         G = self.construir_grafo()
 
         # Identificar nodos no conectados
@@ -224,20 +237,18 @@ class RedDeAcueducto:
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
 
         # Dibujar nodos no conectados
-        for nodo in nodos_no_conectados:
-            pos[nodo] = (0, 0)  # Colocar nodos no conectados en una posición arbitraria
+        if nodos_no_conectados:
             nx.draw_networkx_nodes(
                 G,
                 pos,
-                nodelist=[nodo],
-                node_color="red",
+                nodelist=list(nodos_no_conectados),
+                node_color="gray",  # Color distintivo para nodos no conectados
                 node_size=500
             )
 
         # Título
         plt.title("Visualización de la Red de Acueducto")
         plt.show()
-
 
     # AGREGAR CASA
     def agregar_casa(self, nombre, demanda):
@@ -295,16 +306,23 @@ class RedDeAcueducto:
         print(f"Tanque '{id_tanque}' eliminado con éxito.")
     
     # AGREGAR CONEXIÓN
-    def agregar_conexion(self, origen, destino, capacidad):
+    def agregar_conexion(self, origen, destino, capacidad, color="blue"):
         """
         Agrega una conexión entre dos nodos.
         :param origen: Nodo de origen.
         :param destino: Nodo de destino.
         :param capacidad: Capacidad de la conexión.
+        :param color: Color de la conexión (opcional).
         """
-        self.conexiones.append(Conexion(origen=origen, destino=destino, capacidad=capacidad))
-        print(f"Conexión agregada entre '{origen}' y '{destino}' con capacidad {capacidad}.")
-    
+        if origen not in self.casa and origen not in self.tanques:
+            print(f"Error: El origen {origen} no existe.")
+            return
+        if destino not in self.casa and destino not in self.tanques:
+            print(f"Error: El destino {destino} no existe.")
+            return
+        self.conexiones.append(Conexion(origen=origen, destino=destino, capacidad=capacidad, color=color))
+        print(f"Conexión agregada: origen={origen}, destino={destino}, capacidad={capacidad}, color={color}")
+
     #SIMULAR OBSTRUCCIÓN
     def simular_obstruccion(self, origen, destino, nivel_gravedad):
         """
@@ -312,8 +330,8 @@ class RedDeAcueducto:
         :param origen: Nodo de origen de la conexión.
         :param destino: Nodo de destino de la conexión.
         :param nivel_gravedad: Nivel de obstrucción (0.0 a 1.0).
-                            0.0 significa sin obstrucción.
-                            1.0 significa obstrucción total.
+                                0.0 significa sin obstrucción.
+                                1.0 significa obstrucción total.
         """
         if nivel_gravedad < 0.0 or nivel_gravedad > 1.0:
             print("Error: El nivel de gravedad debe estar entre 0.0 y 1.0.")
@@ -321,10 +339,22 @@ class RedDeAcueducto:
         
         for conexion in self.conexiones:
             if conexion.origen == origen and conexion.destino == destino:
+                # Reducir capacidad según gravedad
                 nueva_capacidad = conexion.capacidad * (1.0 - nivel_gravedad)
                 conexion.capacidad = max(nueva_capacidad, 0)  # Evitar capacidades negativas
+
+                # Determinar color según nivel de gravedad
+                if nivel_gravedad == 0.0:
+                    conexion.color = "blue"
+                elif nivel_gravedad <= 0.33:
+                    conexion.color = "yellow"
+                elif nivel_gravedad <= 0.66:
+                    conexion.color = "orange"
+                else:
+                    conexion.color = "red"
+
                 print(f"Obstrucción simulada en la conexión de '{origen}' a '{destino}'.")
-                print(f"Capacidad reducida a {conexion.capacidad:.2f} debido a un nivel de gravedad de {nivel_gravedad}.")
+                print(f"Capacidad reducida a {conexion.capacidad:.2f} y color actualizado a '{conexion.color}'.")
                 return
         
         print(f"Error: No se encontró la conexión de '{origen}' a '{destino}' para simular la obstrucción.")
