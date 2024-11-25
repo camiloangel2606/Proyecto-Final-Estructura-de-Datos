@@ -1,4 +1,6 @@
 import json
+import networkx as nx
+import matplotlib.pyplot as plt
 from models import Casa, Tanque, Conexion
 
 class RedDeAcueducto:
@@ -15,21 +17,26 @@ class RedDeAcueducto:
         """
         try:
             with open(archivo_json, 'r') as file:
-                data = json.load(file) 
+                data = json.load(file)
                 print(f"Contenido del archivo JSON: {data}")  # Agregado para depuración
-            
-            # Cargar barrios
+
+            # Limpiar estructuras de datos existentes
+            self.casa.clear()
+            self.tanques.clear()
+            self.conexiones.clear()
+
+            # Cargar casas
             for casa in data['casas']:
                 self.agregar_casa(
-                    nombre=casa['nombre'], 
+                    nombre=casa['nombre'],
                     demanda=casa['demanda']
                 )
 
             # Cargar tanques
             for tanque in data['tanques']:
                 self.agregar_tanque(
-                    id_tanque=tanque['id'], 
-                    capacidad=tanque['capacidad'], 
+                    id_tanque=tanque['id'],
+                    capacidad=tanque['capacidad'],
                     nivel_actual=tanque['nivel_actual']
                 )
 
@@ -40,7 +47,7 @@ class RedDeAcueducto:
                     destino=conexion['destino'],
                     capacidad=conexion['capacidad']
                 )
-            
+
             print("Red cargada con éxito.")
             self.verificar_consistencia()
         except Exception as e:
@@ -84,6 +91,26 @@ class RedDeAcueducto:
             print(f"Red guardada con éxito en {archivo_json}")
         except Exception as e:
             print(f"Error al guardar el archivo JSON: {e}")
+
+    #DETECTAR NODOS NO CONECTADOS:
+    def obtener_nodos_no_conectados(self):
+        """
+        Identifica los nodos (casas y tanques) que no tienen conexiones.
+        :return: Lista de nombres de nodos no conectados.
+        """
+        nodos_conectados = set()
+        
+        # Recopilar nodos conectados desde las conexiones
+        for conexion in self.conexiones:
+            nodos_conectados.add(conexion.origen)
+            nodos_conectados.add(conexion.destino)
+        
+        # Todos los nodos posibles (casas y tanques)
+        todos_nodos = set(self.casa.keys()).union(set(self.tanques.keys()))
+        
+        # Determinar nodos no conectados
+        nodos_no_conectados = todos_nodos - nodos_conectados
+        return nodos_no_conectados
 
     # CONEXIONES CON NODOS NO DEFINIDOS
     def verificar_nodos_no_definidos(self):
@@ -169,10 +196,21 @@ class RedDeAcueducto:
         import networkx as nx
         import matplotlib.pyplot as plt
         G = self.construir_grafo()
-        
-        edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
+
+        # Identificar nodos no conectados
+        nodos_no_conectados = self.obtener_nodos_no_conectados()
+
+        # Posicionar nodos
         pos = nx.spring_layout(G)
-        
+
+        # Colores y etiquetas para las aristas
+        edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
+        edge_labels = {
+            (u, v): f"{data['capacity']:.1f}"  # Etiqueta de capacidad en las aristas
+            for u, v, data in G.edges(data=True)
+        }
+
+        # Dibujar el grafo
         nx.draw(
             G,
             pos,
@@ -183,7 +221,23 @@ class RedDeAcueducto:
             font_size=10,
             font_color="black"
         )
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
+
+        # Dibujar nodos no conectados
+        for nodo in nodos_no_conectados:
+            pos[nodo] = (0, 0)  # Colocar nodos no conectados en una posición arbitraria
+            nx.draw_networkx_nodes(
+                G,
+                pos,
+                nodelist=[nodo],
+                node_color="red",
+                node_size=500
+            )
+
+        # Título
+        plt.title("Visualización de la Red de Acueducto")
         plt.show()
+
 
     # AGREGAR CASA
     def agregar_casa(self, nombre, demanda):
@@ -250,3 +304,27 @@ class RedDeAcueducto:
         """
         self.conexiones.append(Conexion(origen=origen, destino=destino, capacidad=capacidad))
         print(f"Conexión agregada entre '{origen}' y '{destino}' con capacidad {capacidad}.")
+    
+    #SIMULAR OBSTRUCCIÓN
+    def simular_obstruccion(self, origen, destino, nivel_gravedad):
+        """
+        Simula una obstrucción en una conexión específica.
+        :param origen: Nodo de origen de la conexión.
+        :param destino: Nodo de destino de la conexión.
+        :param nivel_gravedad: Nivel de obstrucción (0.0 a 1.0).
+                            0.0 significa sin obstrucción.
+                            1.0 significa obstrucción total.
+        """
+        if nivel_gravedad < 0.0 or nivel_gravedad > 1.0:
+            print("Error: El nivel de gravedad debe estar entre 0.0 y 1.0.")
+            return
+        
+        for conexion in self.conexiones:
+            if conexion.origen == origen and conexion.destino == destino:
+                nueva_capacidad = conexion.capacidad * (1.0 - nivel_gravedad)
+                conexion.capacidad = max(nueva_capacidad, 0)  # Evitar capacidades negativas
+                print(f"Obstrucción simulada en la conexión de '{origen}' a '{destino}'.")
+                print(f"Capacidad reducida a {conexion.capacidad:.2f} debido a un nivel de gravedad de {nivel_gravedad}.")
+                return
+        
+        print(f"Error: No se encontró la conexión de '{origen}' a '{destino}' para simular la obstrucción.")

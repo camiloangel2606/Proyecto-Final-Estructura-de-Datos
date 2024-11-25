@@ -11,6 +11,14 @@
         {
             "nombre": "Casa3",
             "demanda": 20
+        },
+        {
+            "nombre": "Casa4",
+            "demanda": 20
+        },
+        {
+            "nombre": "Casa5",
+            "demanda": 60
         }
     ],
     "tanques": [
@@ -30,21 +38,5 @@
             "nivel_actual": 60
         }
     ],
-    "conexiones": [
-        {
-            "origen": "Tanque1",
-            "destino": "Casa1",
-            "capacidad": 60
-        },
-        {
-            "origen": "Tanque2",
-            "destino": "Casa2",
-            "capacidad": 70
-        },
-        {
-            "origen": "Tanque3",
-            "destino": "Casa3",
-            "capacidad": 90
-        }
-    ]
+    "conexiones": []
 }

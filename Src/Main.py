@@ -23,7 +23,7 @@ def main():
 
 def menu():
     red.cargar_desde_json('data/red_acueducto.json')
-    red.visualizar_red()
+    #red.visualizar_red()
     #Menú
     i = 1
     opciones = {#Opciones de funciones que se tendrán en el menú
@@ -40,8 +40,9 @@ def menu():
     while i != 0:
         print("BIENVENIDO AL MENÚ DE OPERACIÓN DEL ACUEDUCTO")
         print("Ingresa la operación a realizar")
-        print("Agregar: (1) Barrio, (2) Tanque, (3) Conexión. Al acueducto")
-        print("Eliminar: (4) Barrio, (5) Tanque, (6) Conexión. Al acueducto")
+        print("Agregar: (1) Casa, (2) Tanque, (3) Conexión. Al acueducto")
+        print("Eliminar: (4) Casa, (5) Tanque, (6) Conexión. Al acueducto")
+        print("(7) Simular_obstrucción")
         print("(0) Salir del menú")
         
         #Validar la entrada del usuario
@@ -60,7 +61,6 @@ def menu():
 #Definimos todas las opciones presentadas en el menú para así solo llamarlas al momento de ejecutar.
 def salir():
     print("Guardando actualizaciones...")
-    red.guardar_a_json('data/red_acueducto.json')
     red.cargar_desde_json('data/red_acueducto.json')
     red.visualizar_red()
     print("Gracias por usar la interfaz de acueductos.")
@@ -86,6 +86,8 @@ def agregar_casa():
         
         # Guardar cambios en el archivo JSON
         red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
     
     except ValueError:
         print("Error: La demanda debe ser un número entero.")
@@ -115,6 +117,8 @@ def agregar_tanque():
         
         red.agregar_tanque(id_tanque, capacidad, nivel_actual)
         red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
     except ValueError:
         print("Error: La capacidad y el nivel actual deben ser números enteros.")
     except Exception as e:
@@ -138,6 +142,8 @@ def agregar_conexion():
         
         red.agregar_conexion(origen, destino, capacidad)
         red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
     except ValueError:
         print("Error: La capacidad debe ser un número entero.")
     except Exception as e:
@@ -154,6 +160,8 @@ def eliminar_casa():
         
         red.eliminar_casa(nombre)
         red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
     except Exception as e:
         print(f"Error inesperado: {e}")
 
@@ -168,6 +176,8 @@ def eliminar_tanque():
         
         red.eliminar_tanque(id_tanque)
         red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
     except Exception as e:
         print(f"Error inesperado: {e}")
 
@@ -183,6 +193,8 @@ def eliminar_conexion():
         
         red.eliminar_conexion(origen, destino)
         red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
     except Exception as e:
         print(f"Error inesperado: {e}")
 
@@ -192,24 +204,62 @@ def simular_obstruccion():
     try:
         origen = input("Ingresa el nodo de origen de la obstrucción: ").strip()
         destino = input("Ingresa el nodo de destino de la obstrucción: ").strip()
-        nivel_gravedad = float(input("Ingresa el nivel de gravedad de la obstrucción (0 - 100% ."))
+        nivel_gravedad = float(input("Ingresa el nivel de gravedad de la obstrucción (0 - 100%) ."))
         if not origen or not destino:
             print("Error: El origen y el destino no pueden estar vacíos.")
             return
         
         red.simular_obstruccion(origen,destino,nivel_gravedad)
         red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
     except Exception as e:
         print(f"Error inesperado {e}")
 
 def visualizar_red(self):
+    import networkx as nx
+    import matplotlib.pyplot as plt
+    
     G = self.construir_grafo()
     
-    # Extraer colores de las aristas
+    # Identificar nodos no conectados
+    nodos_no_conectados = self.obtener_nodos_no_conectados()
+    
+    # Posicionar nodos y configurar colores
+    pos = nx.spring_layout(G)  # Layout gráfico
     edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
     
-    pos = nx.spring_layout(G)
-    nx.draw(G, pos, with_labels=True, edge_color=edge_colors, node_color="lightblue")
+    # Dibujar el grafo principal
+    nx.draw(
+        G,
+        pos,
+        with_labels=True,
+        edge_color=edge_colors,
+        node_color="lightblue",
+        node_size=500,
+        font_size=10,
+        font_color="black"
+    )
+    
+    # Agregar los nodos no conectados al gráfico
+    for nodo in nodos_no_conectados:
+        pos[nodo] = (0, 0)  # Colocar nodos no conectados en una posición arbitraria
+        nx.draw_networkx_nodes(
+            G,
+            pos,
+            nodelist=[nodo],
+            node_color="red",  # Color distintivo para nodos no conectados
+            node_size=500
+        )
+    
+    # Agregar leyenda para identificar los nodos no conectados
+    plt.legend(
+        ['Conectado', 'No Conectado'],
+        loc='best',
+        markerscale=0.5,
+        scatterpoints=1
+    )
+    plt.title("Visualización de la Red de Acueducto")
     plt.show()
 
 if __name__ == "__main__":

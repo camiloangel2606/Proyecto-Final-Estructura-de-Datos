@@ -21,7 +21,7 @@ class Tanque:
         self.nivel_actual = nivel_actual
 
 class Conexion:
-    def __init__(self, origen, destino, capacidad, flujo=0, color = "blue"):
+    def __init__(self, origen, destino, capacidad, flujo=0, color = "blue", nivel_gravedad = "blue"):
         """
         Representa una conexión entre un tanque y un casa o tanque.
         :param origen: Nodo de origen (tanque o casa).
