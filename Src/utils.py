@@ -323,38 +323,47 @@ class RedDeAcueducto:
         self.conexiones.append(Conexion(origen=origen, destino=destino, capacidad=capacidad, color=color))
         print(f"Conexión agregada: origen={origen}, destino={destino}, capacidad={capacidad}, color={color}")
 
-    #SIMULAR OBSTRUCCIÓN
-    def simular_obstruccion(self, origen, destino, nivel_gravedad):
+    def simular_obstruccion(self, origen=None, destino=None, nivel_gravedad=None):
         """
-        Simula una obstrucción en una conexión específica.
-        :param origen: Nodo de origen de la conexión.
-        :param destino: Nodo de destino de la conexión.
-        :param nivel_gravedad: Nivel de obstrucción (0.0 a 1.0).
-                                0.0 significa sin obstrucción.
-                                1.0 significa obstrucción total.
+        Simula obstrucciones en conexiones. Permite la entrada manual o automática si se proporcionan argumentos.
         """
-        if nivel_gravedad < 0.0 or nivel_gravedad > 1.0:
-            print("Error: El nivel de gravedad debe estar entre 0.0 y 1.0.")
-            return
-        
-        for conexion in self.conexiones:
-            if conexion.origen == origen and conexion.destino == destino:
-                # Reducir capacidad según gravedad
-                nueva_capacidad = conexion.capacidad * (1.0 - nivel_gravedad)
-                conexion.capacidad = max(nueva_capacidad, 0)  # Evitar capacidades negativas
-
-                # Determinar color según nivel de gravedad
-                if nivel_gravedad == 0.0:
-                    conexion.color = "blue"
-                elif nivel_gravedad <= 0.33:
-                    conexion.color = "yellow"
-                elif nivel_gravedad <= 0.66:
-                    conexion.color = "orange"
-                else:
-                    conexion.color = "red"
-
-                print(f"Obstrucción simulada en la conexión de '{origen}' a '{destino}'.")
-                print(f"Capacidad reducida a {conexion.capacidad:.2f} y color actualizado a '{conexion.color}'.")
-                return
-        
-        print(f"Error: No se encontró la conexión de '{origen}' a '{destino}' para simular la obstrucción.")
+        while True:
+            if origen is None or destino is None or nivel_gravedad is None:
+                try:
+                    origen = input("Ingrese el nodo de origen de la conexión: ")
+                    destino = input("Ingrese el nodo de destino de la conexión: ")
+                    nivel_gravedad = float(input("Ingrese el nivel de gravedad (0 a 100): "))
+                    nivel_gravedad = nivel_gravedad/100
+                except ValueError:
+                    print("Error: Ingrese un nivel de gravedad válido (0 a 100).")
+                    continue
+            if nivel_gravedad < 0.0 or nivel_gravedad > 1.0:
+                print("Error: El nivel de gravedad debe estar entre 0.0 y 100.")
+                origen, destino, nivel_gravedad = None, None, None
+                continue
+            conexion_encontrada = False
+            for conexion in self.conexiones:
+                if conexion.origen == origen and conexion.destino == destino:
+                    conexion_encontrada = True
+                    nueva_capacidad = conexion.capacidad * (1.0 - nivel_gravedad)
+                    conexion.capacidad = max(nueva_capacidad, 0)
+                    if nivel_gravedad == 0.0:
+                        conexion.color = "blue"
+                    elif nivel_gravedad <= 0.33:
+                        conexion.color = "yellow"
+                    elif nivel_gravedad <= 0.66:
+                        conexion.color = "orange"
+                    else:
+                        conexion.color = "red"
+                    print(f"\nObstrucción simulada en la conexión de '{origen}' a '{destino}'.")
+                    print(f"Capacidad reducida a {conexion.capacidad:.2f} y color actualizado a '{conexion.color}'.")
+                    break
+            if not conexion_encontrada:
+                print(f"Error: No se encontró la conexión de '{origen}' a '{destino}' para simular la obstrucción.")
+            if origen is not None and destino is not None and nivel_gravedad is not None:
+                # Si se pasaron argumentos, salir después de una simulación
+                break
+            continuar = input("¿Desea simular otra obstrucción? (s/n): ").strip().lower()
+            if continuar != 's':
+                print("Finalizando simulación de obstrucciones.")
+                break

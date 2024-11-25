@@ -128,8 +128,8 @@ def agregar_tanque():
 def agregar_conexion():
     print("Ingresa la información de la conexión.")
     try:
-        origen = input("Ingresa el nodo de origen (barrio o tanque): ").strip()
-        destino = input("Ingresa el nodo de destino (barrio o tanque): ").strip()
+        origen = input("Ingresa el nodo de origen (Tanque): ").strip()
+        destino = input("Ingresa el nodo de destino (Casa o tanque): ").strip()
         if not origen or not destino:
             print("Error: El origen y el destino no pueden estar vacíos.")
             return
@@ -200,16 +200,8 @@ def eliminar_conexion():
 
 #SIMULAR OBSTRUCCIÓN:
 def simular_obstruccion():
-    print("Simular una obstrucción")
     try:
-        origen = input("Ingresa el nodo de origen de la obstrucción: ").strip()
-        destino = input("Ingresa el nodo de destino de la obstrucción: ").strip()
-        nivel_gravedad = float(input("Ingresa el nivel de gravedad de la obstrucción (0 - 100%) ."))
-        if not origen or not destino:
-            print("Error: El origen y el destino no pueden estar vacíos.")
-            return
-        
-        red.simular_obstruccion(origen,destino,nivel_gravedad)
+        red.simular_obstruccion()
         red.guardar_a_json('data/red_acueducto.json')
         red.cargar_desde_json('data/red_acueducto.json')
         red.visualizar_red()
