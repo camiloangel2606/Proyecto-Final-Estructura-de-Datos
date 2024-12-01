@@ -1,4 +1,5 @@
 import json
+import heapq
 import networkx as nx
 import matplotlib.pyplot as plt
 from models import Casa, Tanque, Conexion
@@ -8,32 +9,31 @@ class RedDeAcueducto:
         self.casa = {}  # Cambiado de barrios a casa
         self.tanques = {}
         self.conexiones = []
-
-    # CARGAR ARCHIVOS JSON
     def cargar_desde_json(self, archivo_json):
         """
         Carga la red desde un archivo JSON.
         :param archivo_json: Ruta del archivo JSON.
         """
+        import json
         try:
             with open(archivo_json, 'r') as file:
                 data = json.load(file)
                 print(f"Contenido del archivo JSON: {data}")  # Depuración
 
             # Limpiar estructuras de datos existentes
-            self.casa.clear()
-            self.tanques.clear()
-            self.conexiones.clear()
+            self.casa = {}  # Usar diccionario para indexar casas
+            self.tanques = {}  # Usar diccionario para indexar tanques
+            self.conexiones = []  # Lista para conexiones
 
             # Cargar casas
-            for casa in data['casas']:
+            for casa in data.get('casas', []):
                 self.agregar_casa(
                     nombre=casa['nombre'],
                     demanda=casa['demanda']
                 )
 
             # Cargar tanques
-            for tanque in data['tanques']:
+            for tanque in data.get('tanques', []):
                 self.agregar_tanque(
                     id_tanque=tanque['id'],
                     capacidad=tanque['capacidad'],
@@ -41,26 +41,30 @@ class RedDeAcueducto:
                 )
 
             # Cargar conexiones
-            for conexion in data['conexiones']:
+            for conexion in data.get('conexiones', []):
                 self.agregar_conexion(
                     origen=conexion['origen'],
                     destino=conexion['destino'],
                     capacidad=conexion['capacidad'],
-                    color=conexion.get('color', 'blue')  # Color opcional
+                    color=conexion.get('color', 'blue')
                 )
 
             print("Red cargada con éxito.")
-            self.verificar_consistencia()
+            self.verificar_consistencia()  # Verifica integridad de la red
+        except FileNotFoundError:
+            print(f"El archivo '{archivo_json}' no se encuentra.")
+        except json.JSONDecodeError as e:
+            print(f"Error en el formato del archivo JSON: {e}")
         except Exception as e:
             print(f"Error al cargar el archivo JSON: {e}")
 
 
-    # GUARDAR ARCHIVO JSON
     def guardar_a_json(self, archivo_json):
         """
         Guarda la red en un archivo JSON.
         :param archivo_json: Ruta del archivo JSON donde se guardará la red.
         """
+        import json
         try:
             # Crear el diccionario que representa la red
             data = {
@@ -82,15 +86,15 @@ class RedDeAcueducto:
                         "origen": conexion.origen,
                         "destino": conexion.destino,
                         "capacidad": conexion.capacidad,
-                        "color": conexion.color  # Guardar color
+                        "color": conexion.color
                     } for conexion in self.conexiones
                 ]
             }
-            
+
             # Guardar en el archivo JSON
             with open(archivo_json, 'w') as file:
                 json.dump(data, file, indent=4)
-        
+            
             print(f"Red guardada con éxito en {archivo_json}")
         except Exception as e:
             print(f"Error al guardar el archivo JSON: {e}")
@@ -246,10 +250,10 @@ class RedDeAcueducto:
             # Definir color del tanque basado en capacidad disponible
             if capacidad_disponible < 0:
                 node_colors.append("red")  # Tanques agotados
-            elif capacidad_disponible < 0.2 * tanque.capacidad:
+            elif capacidad_disponible < 0.2 * tanque.capacidad: #Menos del 20% disponible
                 node_colors.append("orange")  # Capacidad baja
             else:
-                node_colors.append("green")  # Capacidad suficiente
+                node_colors.append("green")  # Capacidad suficiente, más del 20% disponible
 
         # Dibujar el grafo
         nx.draw(
@@ -352,6 +356,7 @@ class RedDeAcueducto:
         self.conexiones.append(Conexion(origen=origen, destino=destino, capacidad=capacidad, color=color))
         print(f"Conexión agregada: origen={origen}, destino={destino}, capacidad={capacidad}, color={color}")
 
+    #SIMULAR OBSTRUCCIÓN
     def simular_obstruccion(self, origen=None, destino=None, nivel_gravedad=None):
         """
         Simula obstrucciones en conexiones. Permite la entrada manual o automática si se proporcionan argumentos.
@@ -396,3 +401,89 @@ class RedDeAcueducto:
             if continuar != 's':
                 print("Finalizando simulación de obstrucciones.")
                 break
+
+    #ENCONTRAR UNA RUTA ALTERNATIVA
+    def encontrar_ruta_alternativa(self, origen, destino):
+        """
+        Encuentra la ruta alternativa más óptima entre dos nodos en el grafo,
+        minimizando el impacto en la capacidad de los tanques.
+        Parámetros:
+        - origen: Nodo inicial.
+        - destino: Nodo final.
+        Retorna:
+        - Lista de nodos que forman la ruta alternativa óptima.
+        """
+        G = self.construir_grafo()
+        if not nx.has_path(G, origen, destino):
+            print(f"No hay camino entre {origen} y {destino}.")
+            return None
+        # Usar Dijkstra para encontrar la ruta con menor peso
+        ruta_alternativa = nx.shortest_path(
+            G, source=origen, target=destino, weight='weight'
+        )
+        return ruta_alternativa
+
+    #VISUALIZAR LA RUTA ALTERNATIVA
+    def visualizar_rutas_alternativas(self, rutas):
+        """
+        Visualiza las rutas alternativas en el grafo.
+
+        Parámetros:
+        - rutas: Lista de rutas alternativas (listas de nodos).
+        """
+        G = self.construir_grafo()
+        pos = nx.spring_layout(G)
+
+        # Dibujar grafo base
+        edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
+        node_colors = ["lightblue" if "Casa" in node else "green" for node in G.nodes()]
+        nx.draw(
+            G,
+            pos,
+            with_labels=True,
+            edge_color=edge_colors,
+            node_color=node_colors,
+            node_size=500
+        )
+
+        # Dibujar rutas alternativas
+        for ruta in rutas:
+            ruta_aristas = [(ruta[i], ruta[i+1]) for i in range(len(ruta)-1)]
+            nx.draw_networkx_edges(
+                G,
+                pos,
+                edgelist=ruta_aristas,
+                edge_color="blue",
+                width=2
+            )
+
+        # Mostrar el grafo
+        plt.title("Rutas Alternativas")
+        plt.show()
+
+    #CALCULAR Y VISUALIZAR RUTAS
+    def calcular_y_visualizar_rutas(self, barrios_afectados):
+        """
+        Encuentra y visualiza las rutas alternativas para los barrios afectados.
+        Parámetros:
+        - barrios_afectados: Lista de nodos afectados (barrios).
+        """
+        rutas = []
+        for barrio in barrios_afectados:
+            ruta = self.encontrar_ruta_alternativa(origen="Tanque_Principal", destino=barrio)
+            if ruta:
+                rutas.append(ruta)
+        # Visualizar las rutas
+        self.visualizar_rutas_alternativas(rutas)
+    
+    def aplicar_obstrucciones(self, obstrucciones):
+        """
+        Marca las aristas afectadas por obstrucciones en el grafo.
+        Parámetros:
+        - obstrucciones: Lista de aristas afectadas (tuplas: (nodo1, nodo2)).
+        """
+        G = self.construir_grafo()
+        for (u, v) in obstrucciones:
+            if G.has_edge(u, v):
+                G[u][v]['weight'] = float('inf')  # Bloquear la arista
+                G[u][v]['color'] = "red"  # Marcar como obstruida

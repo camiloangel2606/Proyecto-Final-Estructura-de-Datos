@@ -35,6 +35,7 @@ def menu():
         5: eliminar_tanque,
         6: eliminar_conexion,
         7: simular_obstruccion,
+        8: calcular_y_visualizar,
     }
     
     while i != 0:
@@ -42,7 +43,7 @@ def menu():
         print("Ingresa la operación a realizar")
         print("Agregar: (1) Casa, (2) Tanque, (3) Conexión. Al acueducto")
         print("Eliminar: (4) Casa, (5) Tanque, (6) Conexión. Al acueducto")
-        print("(7) Simular_obstrucción")
+        print("(7) Simular_obstrucción, (8) Encontrar rutas alternativas")
         print("(0) Salir del menú")
         
         #Validar la entrada del usuario
@@ -208,6 +209,7 @@ def simular_obstruccion():
     except Exception as e:
         print(f"Error inesperado {e}")
 
+#VISUALIZAR LA RED
 def visualizar_red(self):
     import networkx as nx
     import matplotlib.pyplot as plt
@@ -253,6 +255,39 @@ def visualizar_red(self):
     )
     plt.title("Visualización de la Red de Acueducto")
     plt.show()
+
+#CALCULAR Y VISUALIZAR
+def calcular_y_visualizar():
+    archivo_json = 'data/red_acueducto.json'
+    try:
+        red.cargar_desde_json(archivo_json)
+        print("Simulación de rutas alternativas:")
+        # Solicitar barrios afectados
+        barrios_afectados = input(
+            "Ingresa los barrios afectados por obstrucciones (separados por comas): "
+        ).strip().split(',')
+        barrios_afectados = [barrio.strip() for barrio in barrios_afectados]
+        # Solicitar obstrucciones
+        obstrucciones = []
+        while True:
+            obstruccion = input(
+                "Ingresa una obstrucción en formato 'origen,destino' (deja vacío para terminar): "
+            ).strip()
+            if not obstruccion:
+                break
+            try:
+                origen, destino = obstruccion.split(',')
+                obstrucciones.append((origen.strip(), destino.strip()))
+            except ValueError:
+                print("Formato inválido. Usa 'origen,destino'.")
+        # Aplicar obstrucciones en el grafo
+        red.aplicar_obstrucciones(obstrucciones)
+        # Calcular y visualizar rutas alternativas
+        red.calcular_y_visualizar_rutas(barrios_afectados)
+        # Guardar los cambios
+        red.guardar_a_json(archivo_json)
+    except Exception as e:
+        print(f"Error inesperado: {e}")
 
 if __name__ == "__main__":
     #main()

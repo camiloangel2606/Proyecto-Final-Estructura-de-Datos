@@ -19,22 +19,26 @@
         {
             "nombre": "Casa5",
             "demanda": 90
+        },
+        {
+            "nombre": "Casa6",
+            "demanda": 35
         }
     ],
     "tanques": [
         {
             "id": "Tanque1",
-            "capacidad": 100,
+            "capacidad": 340,
             "nivel_actual": 80
         },
         {
             "id": "Tanque2",
-            "capacidad": 150,
+            "capacidad": 620,
             "nivel_actual": 100
         },
         {
             "id": "Tanque3",
-            "capacidad": 80,
+            "capacidad": 240,
             "nivel_actual": 60
         }
     ],
@@ -42,8 +46,8 @@
         {
             "origen": "Tanque1",
             "destino": "Casa1",
-            "capacidad": 60,
-            "color": "blue"
+            "capacidad": 15.0,
+            "color": "red"
         },
         {
             "origen": "Tanque2",
@@ -66,6 +70,12 @@
         {
             "origen": "Tanque2",
             "destino": "Casa1",
+            "capacidad": 35,
+            "color": "blue"
+        },
+        {
+            "origen": "Tanque3",
+            "destino": "Casa6",
             "capacidad": 35,
             "color": "blue"
         }
