@@ -1,4 +1,5 @@
 import networkx as nx
+import json
 import matplotlib.pyplot as plt
 from utils import RedDeAcueducto
 red = RedDeAcueducto()
@@ -257,16 +258,24 @@ def visualizar_red(self):
     plt.show()
 
 #CALCULAR Y VISUALIZAR
+# CALCULAR Y VISUALIZAR
 def calcular_y_visualizar():
     archivo_json = 'data/red_acueducto.json'
     try:
+        # Cargar la red desde el archivo JSON
         red.cargar_desde_json(archivo_json)
         print("Simulación de rutas alternativas:")
-        # Solicitar barrios afectados
-        barrios_afectados = input(
-            "Ingresa los barrios afectados por obstrucciones (separados por comas): "
+        
+        # Solicitar casas afectadas
+        casas_afectadas = input(
+            "Ingresa las casas afectadas por obstrucciones (separadas por comas): "
         ).strip().split(',')
-        barrios_afectados = [barrio.strip() for barrio in barrios_afectados]
+        casas_afectadas = [casa.strip() for casa in casas_afectadas if casa.strip()]
+        
+        if not casas_afectadas:
+            print("No se ingresaron casas afectadas.")
+            return
+        
         # Solicitar obstrucciones
         obstrucciones = []
         while True:
@@ -277,15 +286,32 @@ def calcular_y_visualizar():
                 break
             try:
                 origen, destino = obstruccion.split(',')
-                obstrucciones.append((origen.strip(), destino.strip()))
+                origen, destino = origen.strip(), destino.strip()
+                if origen and destino:
+                    obstrucciones.append((origen, destino))
+                else:
+                    print("Ambos nodos, origen y destino, deben ser válidos.")
             except ValueError:
                 print("Formato inválido. Usa 'origen,destino'.")
+        
+        if not obstrucciones:
+            print("No se ingresaron obstrucciones.")
+            return
+        
         # Aplicar obstrucciones en el grafo
         red.aplicar_obstrucciones(obstrucciones)
+        
         # Calcular y visualizar rutas alternativas
-        red.calcular_y_visualizar_rutas(barrios_afectados)
-        # Guardar los cambios
+        red.calcular_y_visualizar_rutas(casas_afectadas)
+        
+        # Guardar los cambios en el archivo JSON
         red.guardar_a_json(archivo_json)
+        print("Cambios guardados correctamente.")
+        
+    except FileNotFoundError:
+        print(f"El archivo '{archivo_json}' no se encontró.")
+    except json.JSONDecodeError:
+        print(f"Error al leer el archivo JSON '{archivo_json}'. Verifica su formato.")
     except Exception as e:
         print(f"Error inesperado: {e}")
 

@@ -9,6 +9,7 @@ class RedDeAcueducto:
         self.casa = {}  # Cambiado de barrios a casa
         self.tanques = {}
         self.conexiones = []
+        self.grafo = None
     def cargar_desde_json(self, archivo_json):
         """
         Carga la red desde un archivo JSON.
@@ -423,7 +424,7 @@ class RedDeAcueducto:
         )
         return ruta_alternativa
 
-    #VISUALIZAR LA RUTA ALTERNATIVA
+    # VISUALIZAR LA RUTA ALTERNATIVA
     def visualizar_rutas_alternativas(self, rutas):
         """
         Visualiza las rutas alternativas en el grafo.
@@ -461,21 +462,27 @@ class RedDeAcueducto:
         plt.title("Rutas Alternativas")
         plt.show()
 
-    #CALCULAR Y VISUALIZAR RUTAS
-    def calcular_y_visualizar_rutas(self, barrios_afectados):
+    # CALCULAR Y VISUALIZAR RUTAS
+    def calcular_y_visualizar_rutas(self, casas_afectadas):
         """
-        Encuentra y visualiza las rutas alternativas para los barrios afectados.
+        Encuentra y visualiza las rutas alternativas para las casas afectadas.
+
         Parámetros:
-        - barrios_afectados: Lista de nodos afectados (barrios).
+        - casas_afectadas: Lista de nodos afectados (casas).
         """
+        G = self.construir_grafo()
         rutas = []
-        for barrio in barrios_afectados:
-            ruta = self.encontrar_ruta_alternativa(origen="Tanque_Principal", destino=barrio)
-            if ruta:
-                rutas.append(ruta)
+        for casa in casas_afectadas:
+            # Buscar ruta desde cualquier tanque al nodo afectado
+            for tanque in [n for n in G.nodes() if "Tanque" in n]:
+                ruta = self.encontrar_ruta_alternativa(origen=tanque, destino=casa)
+                if ruta:
+                    rutas.append(ruta)
+                    break  # Salir del bucle si se encuentra una ruta válida
         # Visualizar las rutas
         self.visualizar_rutas_alternativas(rutas)
-    
+
+    # APLICAR OBSTRUCCIONES
     def aplicar_obstrucciones(self, obstrucciones):
         """
         Marca las aristas afectadas por obstrucciones en el grafo.
