@@ -187,13 +187,11 @@ class RedDeAcueducto:
     # SIMULACIONES
     def construir_grafo(self):
         G = nx.DiGraph()
-
         # Agregar nodos (casas y tanques)
         for casa in self.casa.values():
             G.add_node(casa.nombre)
         for tanque in self.tanques.values():
             G.add_node(tanque.id_tanque)
-
         # Agregar aristas (conexiones)
         for conexion in self.conexiones:
             print(f"Añadiendo arista: origen={conexion.origen}, destino={conexion.destino}, capacidad={conexion.capacidad}, color={conexion.color}")
@@ -203,12 +201,10 @@ class RedDeAcueducto:
                 capacity=conexion.capacidad,
                 color=conexion.color
             )
-
         print("Nodos en construir_grafo:", G.nodes())
         print("Aristas en construir_grafo:", G.edges(data=True))
         return G
 
-    # Visualizar la red
     # Visualizar la red
     def visualizar_red(self):
         """
@@ -216,29 +212,28 @@ class RedDeAcueducto:
         Muestra la demanda de cada casa y la capacidad restante de cada tanque.
         """
         G = self.construir_grafo()
-
         # Identificar nodos no conectados
         nodos_no_conectados = self.obtener_nodos_no_conectados()
-
         # Posicionar nodos
         pos = nx.spring_layout(G)
-
         # Colores y etiquetas para las aristas
         edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
         edge_labels = {
             (u, v): f"{data['capacity']:.1f}"  # Etiqueta de capacidad en las aristas
             for u, v, data in G.edges(data=True)
         }
-
         # Crear etiquetas y colores para nodos
         node_labels = {}
         node_colors = []
-
         # Agregar casas a las etiquetas y colores
         for casa in self.casa.values():
-            node_labels[casa.nombre] = f"{casa.nombre}\nDemanda: {casa.demanda}"
-            node_colors.append("lightblue")  # Color estándar para las casas
-
+            # Etiqueta para la casa
+            node_labels[casa.nombre] = f"{casa.nombre}\nDemanda: {casa.demanda:.1f}"
+            # Color basado en la demanda
+            if casa.demanda <= 0:
+                node_colors.append("green")  # Casa satisfecha (demanda cubierta)
+            else:
+                node_colors.append("yellow")  # Casa con demanda pendiente
         # Agregar tanques a las etiquetas y colores
         for tanque in self.tanques.values():
             capacidad_disponible = tanque.nivel_actual - sum(
@@ -247,15 +242,13 @@ class RedDeAcueducto:
             node_labels[tanque.id_tanque] = (
                 f"{tanque.id_tanque}\nCapacidad restante: {capacidad_disponible:.1f}"
             )
-
             # Definir color del tanque basado en capacidad disponible
             if capacidad_disponible < 0:
                 node_colors.append("red")  # Tanques agotados
-            elif capacidad_disponible < 0.2 * tanque.capacidad: #Menos del 20% disponible
+            elif capacidad_disponible < 0.2 * tanque.capacidad:  # Menos del 20% disponible
                 node_colors.append("orange")  # Capacidad baja
             else:
-                node_colors.append("green")  # Capacidad suficiente, más del 20% disponible
-
+                node_colors.append("green")  # Capacidad suficiente
         # Dibujar el grafo
         nx.draw(
             G,
@@ -269,7 +262,6 @@ class RedDeAcueducto:
         )
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
         nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=9)
-
         # Dibujar nodos no conectados
         if nodos_no_conectados:
             nx.draw_networkx_nodes(
@@ -279,7 +271,6 @@ class RedDeAcueducto:
                 node_color="gray",  # Color distintivo para nodos no conectados
                 node_size=500
             )
-
         # Título
         plt.title("Visualización de la Red de Acueducto")
         plt.show()

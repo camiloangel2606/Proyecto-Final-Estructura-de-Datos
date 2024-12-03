@@ -257,7 +257,6 @@ def visualizar_red(self):
     plt.title("Visualización de la Red de Acueducto")
     plt.show()
 
-#CALCULAR Y VISUALIZAR
 # CALCULAR Y VISUALIZAR
 def calcular_y_visualizar():
     archivo_json = 'data/red_acueducto.json'
