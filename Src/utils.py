@@ -227,17 +227,25 @@ class RedDeAcueducto:
         node_colors = []
         # Agregar casas a las etiquetas y colores
         for casa in self.casa.values():
+            # Calcular el suministro total hacia la casa desde las conexiones
+            suministro_total = sum(
+                conexion.capacidad
+                for conexion in self.conexiones
+                if conexion.destino == casa.nombre
+            )
             # Etiqueta para la casa
-            node_labels[casa.nombre] = f"{casa.nombre}\nDemanda: {casa.demanda:.1f}"
-            # Color basado en la demanda
-            if casa.demanda <= 0:
+            node_labels[casa.nombre] = f"{casa.nombre}\nDemanda: {casa.demanda:.1f}\nSuministro: {suministro_total:.1f}"
+            # Color basado en el suministro total
+            if suministro_total >= casa.demanda:
                 node_colors.append("green")  # Casa satisfecha (demanda cubierta)
             else:
                 node_colors.append("yellow")  # Casa con demanda pendiente
         # Agregar tanques a las etiquetas y colores
         for tanque in self.tanques.values():
             capacidad_disponible = tanque.nivel_actual - sum(
-                conexion.capacidad for conexion in self.conexiones if conexion.origen == tanque.id_tanque
+                conexion.capacidad
+                for conexion in self.conexiones
+                if conexion.origen == tanque.id_tanque
             )
             node_labels[tanque.id_tanque] = (
                 f"{tanque.id_tanque}\nCapacidad restante: {capacidad_disponible:.1f}"
@@ -274,6 +282,7 @@ class RedDeAcueducto:
         # Título
         plt.title("Visualización de la Red de Acueducto")
         plt.show()
+
 
     # AGREGAR CASA
     def agregar_casa(self, nombre, demanda):
