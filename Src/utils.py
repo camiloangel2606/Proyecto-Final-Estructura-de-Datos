@@ -243,9 +243,9 @@ class RedDeAcueducto:
                 f"{tanque.id_tanque}\nCapacidad restante: {capacidad_disponible:.1f}"
             )
             # Definir color del tanque basado en capacidad disponible
-            if capacidad_disponible < 0:
+            if capacidad_disponible <= 0:
                 node_colors.append("red")  # Tanques agotados
-            elif capacidad_disponible < 0.2 * tanque.capacidad:  # Menos del 20% disponible
+            elif capacidad_disponible <= 0.2 * tanque.capacidad:  # Menos del 20% disponible
                 node_colors.append("orange")  # Capacidad baja
             else:
                 node_colors.append("green")  # Capacidad suficiente
@@ -419,13 +419,11 @@ class RedDeAcueducto:
     def visualizar_rutas_alternativas(self, rutas):
         """
         Visualiza las rutas alternativas en el grafo.
-
         Parámetros:
         - rutas: Lista de rutas alternativas (listas de nodos).
         """
         G = self.construir_grafo()
         pos = nx.spring_layout(G)
-
         # Dibujar grafo base
         edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
         node_colors = ["lightblue" if "Casa" in node else "green" for node in G.nodes()]
@@ -437,7 +435,6 @@ class RedDeAcueducto:
             node_color=node_colors,
             node_size=500
         )
-
         # Dibujar rutas alternativas
         for ruta in rutas:
             ruta_aristas = [(ruta[i], ruta[i+1]) for i in range(len(ruta)-1)]
@@ -448,7 +445,6 @@ class RedDeAcueducto:
                 edge_color="blue",
                 width=2
             )
-
         # Mostrar el grafo
         plt.title("Rutas Alternativas")
         plt.show()
@@ -485,3 +481,60 @@ class RedDeAcueducto:
             if G.has_edge(u, v):
                 G[u][v]['weight'] = float('inf')  # Bloquear la arista
                 G[u][v]['color'] = "red"  # Marcar como obstruida
+    
+    #ACTUALIZAR VALORES(CASA, TANQUE, CONEXIÓN)
+    def actualizar_valores(self, tipo, identificador, **nuevos_valores):
+        """
+        Actualiza los valores de una casa, tanque o conexión en la red.
+
+        Parámetros:
+        - tipo (str): Tipo del objeto a actualizar ('casa', 'tanque', 'conexion').
+        - identificador (str): Identificador del objeto.
+        - nuevos_valores (dict): Valores nuevos a asignar.
+
+        Retorna:
+        - bool: True si la actualización fue exitosa, False en caso contrario.
+        """
+        if tipo == "Casa":
+            if identificador in self.casa:
+                casa = self.casa[identificador]
+                if "nombre" in nuevos_valores:
+                    print(f"No se permite cambiar el nombre de la casa '{identificador}'.")
+                if "demanda" in nuevos_valores:
+                    casa.demanda = nuevos_valores["demanda"]
+                    print(f"Casa '{identificador}' actualizada: demanda={casa.demanda}")
+                return True
+            else:
+                print(f"Error: La casa '{identificador}' no existe.")
+        
+        elif tipo == "Tanque":
+            if identificador in self.tanques:
+                tanque = self.tanques[identificador]
+                if "capacidad" in nuevos_valores:
+                    tanque.capacidad = nuevos_valores["capacidad"]
+                if "nivel_actual" in nuevos_valores:
+                    tanque.nivel_actual = nuevos_valores["nivel_actual"]
+                print(f"Tanque '{identificador}' actualizado: capacidad={tanque.capacidad}, nivel_actual={tanque.nivel_actual}")
+                return True
+            else:
+                print(f"Error: El tanque '{identificador}' no existe.")
+        
+        elif tipo == "Conexion":
+            conexion_encontrada = None
+            for conexion in self.conexiones:
+                if conexion.origen == identificador[0] and conexion.destino == identificador[1]:
+                    conexion_encontrada = conexion
+                    break
+            if conexion_encontrada:
+                if "capacidad" in nuevos_valores:
+                    conexion_encontrada.capacidad = nuevos_valores["capacidad"]
+                if "color" in nuevos_valores:
+                    conexion_encontrada.color = nuevos_valores["color"]
+                print(f"Conexión '{identificador}' actualizada: capacidad={conexion_encontrada.capacidad}, color={conexion_encontrada.color}")
+                return True
+            else:
+                print(f"Error: No se encontró la conexión '{identificador}'.")
+        
+        else:
+            print(f"Error: Tipo '{tipo}' no reconocido. Use 'casa', 'tanque' o 'conexion'.")
+            return False

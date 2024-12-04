@@ -29,7 +29,7 @@
         {
             "id": "Tanque1",
             "capacidad": 300,
-            "nivel_actual": 50
+            "nivel_actual": 80
         },
         {
             "id": "Tanque2",
@@ -47,25 +47,25 @@
             "origen": "Tanque1",
             "destino": "Casa1",
             "capacidad": 20,
-            "color": "green"
+            "color": "red"
         },
         {
             "origen": "Tanque1",
             "destino": "Casa3",
             "capacidad": 30,
-            "color": "yellow"
+            "color": "orange"
         },
         {
             "origen": "Tanque2",
             "destino": "Casa2",
             "capacidad": 15,
-            "color": "blue"
+            "color": "yellow"
         },
         {
             "origen": "Tanque2",
             "destino": "Casa4",
             "capacidad": 40,
-            "color": "green"
+            "color": "blue"
         },
         {
             "origen": "Tanque3",

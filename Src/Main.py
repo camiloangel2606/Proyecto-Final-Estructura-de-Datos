@@ -37,6 +37,7 @@ def menu():
         6: eliminar_conexion,
         7: simular_obstruccion,
         8: calcular_y_visualizar,
+        9: actualizar_valores,
     }
     
     while i != 0:
@@ -44,7 +45,7 @@ def menu():
         print("Ingresa la operación a realizar")
         print("Agregar: (1) Casa, (2) Tanque, (3) Conexión. Al acueducto")
         print("Eliminar: (4) Casa, (5) Tanque, (6) Conexión. Al acueducto")
-        print("(7) Simular_obstrucción, (8) Encontrar rutas alternativas")
+        print("(7) Simular_obstrucción, (8) Encontrar rutas alternativas,(9) Actualizar valores (Casa, Tanque, Conexión).")
         print("(0) Salir del menú")
         
         #Validar la entrada del usuario
@@ -311,6 +312,47 @@ def calcular_y_visualizar():
         print(f"El archivo '{archivo_json}' no se encontró.")
     except json.JSONDecodeError:
         print(f"Error al leer el archivo JSON '{archivo_json}'. Verifica su formato.")
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+
+#ACTUALIZAR VALORES (CASA, TANQUE, CONEXIÓN)
+def actualizar_valores():
+    archivo_json = 'data/red_acueducto.json'
+    try:
+        # Cargar la red desde el archivo JSON
+        red.cargar_desde_json(archivo_json)
+        
+        # Solicitar datos al usuario
+        tipo = input("Ingresa el cambio que quieres realizar ('Casa', 'Tanque', 'Conexion'): ").strip()
+        identificador = input(f"Ingresa el identificador del {tipo} que deseas actualizar: ").strip()
+        nuevos_valores_raw = input(f"Ingresa los nuevos valores para el {tipo} (por ejemplo: clave1=valor1,clave2=valor2): ").strip()
+        
+        # Procesar la entrada de nuevos valores
+        nuevos_valores = {}
+        for item in nuevos_valores_raw.split(","):
+            clave, valor = item.split("=")
+            clave = clave.strip()
+            valor = valor.strip()
+            # Convertir valores numéricos si es necesario
+            if valor.isdigit():
+                valor = int(valor)
+            elif valor.replace('.', '', 1).isdigit():
+                valor = float(valor)
+            nuevos_valores[clave] = valor
+        # Llamar a la función actualizar_valores
+        if red.actualizar_valores(tipo, identificador, **nuevos_valores):
+            # Guardar los cambios en el archivo JSON
+            red.guardar_a_json(archivo_json)
+            print("Cambios guardados correctamente.")
+        else:
+            print("No se pudo realizar la actualización.")
+        
+    except FileNotFoundError:
+        print(f"El archivo '{archivo_json}' no se encontró.")
+    except json.JSONDecodeError:
+        print(f"Error al leer el archivo JSON '{archivo_json}'. Verifica su formato.")
+    except ValueError as e:
+        print(f"Error en el formato de entrada: {e}")
     except Exception as e:
         print(f"Error inesperado: {e}")
 
