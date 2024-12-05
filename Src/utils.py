@@ -142,32 +142,52 @@ class RedDeAcueducto:
                 conexiones_vistas.add(par_conexion)
         return errores
 
-    # BUCLES EN EL FLUJO
+    #DETECTAR BUCLES:
     def detectar_bucles(self):
-        def dfs(nodo, visitados, stack, camino):
+        """
+        Detecta bucles en el grafo de conexiones.
+        Devuelve un booleano indicando si hay bucles y los nodos involucrados en el primer bucle detectado.
+        """
+        def dfs(nodo, visitados, stack):
+            """
+            Búsqueda en profundidad (DFS) para detectar ciclos.
+            :param nodo: Nodo actual.
+            :param visitados: Conjunto de nodos visitados.
+            :param stack: Conjunto de nodos en la pila de recorrido.
+            :return: (booleano, lista del ciclo detectado).
+            """
+            if nodo in stack:
+                # Encontramos un ciclo; construirlo desde la pila
+                ciclo = list(stack)
+                indice_ciclo = ciclo.index(nodo)
+                return True, ciclo[indice_ciclo:]
+            
+            if nodo in visitados:
+                return False, []  # Nodo ya explorado y sin bucle
+            
+            # Marcar el nodo como visitado
             visitados.add(nodo)
-            stack.add(nodo)
-            camino.append(nodo)
+            stack.append(nodo)
+            
+            # Explorar vecinos (destinos de las conexiones salientes)
             for conexion in self.conexiones:
                 if conexion.origen == nodo:
-                    siguiente = conexion.destino
-                    if siguiente not in visitados:
-                        if dfs(siguiente, visitados, stack, camino):
-                            return True, camino
-                    elif siguiente in stack:
-                        # Encontramos un bucle
-                        indice_ciclo = camino.index(siguiente)
-                        return True, camino[indice_ciclo:]  # Retornar el ciclo
-            stack.remove(nodo)
-            camino.pop()  # Remover el nodo al retroceder
+                    ciclo_encontrado, ciclo = dfs(conexion.destino, visitados, stack)
+                    if ciclo_encontrado:
+                        return True, ciclo
+            
+            # Retroceder en la pila
+            stack.pop()
             return False, []
         visitados = set()
         for nodo in list(self.casa.keys()) + list(self.tanques.keys()):
             if nodo not in visitados:
-                ciclo, nodos_ciclo = dfs(nodo, visitados, set(), [])
-                if ciclo:
-                    return True, nodos_ciclo
-        return False, []
+                stack = []
+                ciclo_encontrado, ciclo = dfs(nodo, visitados, stack)
+                if ciclo_encontrado:
+                    return True, ciclo  # Bucle detectado
+        
+        return False, []  # No hay ciclos
 
     # VALIDAR DURANTE LA CARGA
     def verificar_consistencia(self):
