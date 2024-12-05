@@ -205,17 +205,17 @@ class RedDeAcueducto:
         print("Aristas en construir_grafo:", G.edges(data=True))
         return G
 
-    # Visualizar la red
     def visualizar_red(self):
         """
         Visualiza la red de acueducto utilizando NetworkX.
-        Muestra la demanda de cada casa y la capacidad restante de cada tanque.
+        Muestra la demanda, suministro y excedente de cada casa,
+        así como la capacidad restante de cada tanque.
         """
         G = self.construir_grafo()
         # Identificar nodos no conectados
         nodos_no_conectados = self.obtener_nodos_no_conectados()
-        # Posicionar nodos
-        pos = nx.spring_layout(G)
+        # Posicionar nodos con ajuste de distancia
+        pos = nx.spring_layout(G, k=0.8, iterations=50)  # Ajuste de k para mayor separación
         # Colores y etiquetas para las aristas
         edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
         edge_labels = {
@@ -233,8 +233,15 @@ class RedDeAcueducto:
                 for conexion in self.conexiones
                 if conexion.destino == casa.nombre
             )
+            # Calcular el excedente de agua
+            excedente = max(suministro_total - casa.demanda, 0)
             # Etiqueta para la casa
-            node_labels[casa.nombre] = f"{casa.nombre}\nDemanda: {casa.demanda:.1f}\nSuministro: {suministro_total:.1f}"
+            node_labels[casa.nombre] = (
+                f"{casa.nombre}\n"
+                f"Demanda: {casa.demanda:.1f}\n"
+                f"Suministro: {suministro_total:.1f}\n"
+                f"Excedente: {excedente:.1f}"
+            )
             # Color basado en el suministro total
             if suministro_total >= casa.demanda:
                 node_colors.append("green")  # Casa satisfecha (demanda cubierta)
@@ -258,6 +265,7 @@ class RedDeAcueducto:
             else:
                 node_colors.append("green")  # Capacidad suficiente
         # Dibujar el grafo
+        plt.figure(figsize=(12, 8))  # Ajustar tamaño del gráfico
         nx.draw(
             G,
             pos,
@@ -279,10 +287,11 @@ class RedDeAcueducto:
                 node_color="gray",  # Color distintivo para nodos no conectados
                 node_size=500
             )
+        # Ajustar márgenes
+        plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
         # Título
         plt.title("Visualización de la Red de Acueducto")
         plt.show()
-
 
     # AGREGAR CASA
     def agregar_casa(self, nombre, demanda):
@@ -339,21 +348,57 @@ class RedDeAcueducto:
         del self.tanques[id_tanque]
         print(f"Tanque '{id_tanque}' eliminado con éxito.")
     
-    # AGREGAR CONEXIÓN
     def agregar_conexion(self, origen, destino, capacidad, color="blue"):
         """
-        Agrega una conexión entre dos nodos.
+        Agrega una conexión entre dos nodos, con validaciones adicionales.
         :param origen: Nodo de origen.
         :param destino: Nodo de destino.
         :param capacidad: Capacidad de la conexión.
         :param color: Color de la conexión (opcional).
         """
+        # Verificar si el origen y el destino existen
         if origen not in self.casa and origen not in self.tanques:
-            print(f"Error: El origen {origen} no existe.")
+            print(f"Error: El nodo origen '{origen}' no existe.")
             return
         if destino not in self.casa and destino not in self.tanques:
-            print(f"Error: El destino {destino} no existe.")
+            print(f"Error: El nodo destino '{destino}' no existe.")
             return
+        # Validar tipos de conexiones permitidas
+        origen_es_casa = origen in self.casa
+        destino_es_casa = destino in self.casa
+        origen_es_tanque = origen in self.tanques
+        destino_es_tanque = destino in self.tanques
+        if origen_es_casa and destino_es_tanque:
+            print("Error: No se permite una conexión de una casa a un tanque.")
+            return
+        if not (
+            (origen_es_casa and destino_es_casa) or
+            (origen_es_tanque and destino_es_casa) or
+            (origen_es_tanque and destino_es_tanque)
+        ):
+            print("Error: Conexión no permitida. Solo se permiten conexiones:")
+            print(" - Casa a Casa")
+            print(" - Tanque a Casa")
+            print(" - Tanque a Tanque")
+            return
+        # Validar que el nodo origen tenga suficiente capacidad
+        capacidad_disponible = 0
+        if origen_es_tanque:
+            tanque = self.tanques[origen]
+            capacidad_disponible = tanque.nivel_actual - sum(
+                conexion.capacidad for conexion in self.conexiones if conexion.origen == origen
+            )
+        elif origen_es_casa:
+            suministro_total = sum(
+                conexion.capacidad for conexion in self.conexiones if conexion.destino == origen
+            )
+            demanda_total = self.casa[origen].demanda
+            capacidad_disponible = max(suministro_total - demanda_total, 0)
+        if capacidad > capacidad_disponible:
+            print(f"Error: El nodo origen '{origen}' no tiene suficiente capacidad disponible. "
+                f"Capacidad disponible: {capacidad_disponible:.1f}, Capacidad requerida: {capacidad:.1f}.")
+            return
+        # Agregar la conexión si pasa las validaciones
         self.conexiones.append(Conexion(origen=origen, destino=destino, capacidad=capacidad, color=color))
         print(f"Conexión agregada: origen={origen}, destino={destino}, capacidad={capacidad}, color={color}")
 

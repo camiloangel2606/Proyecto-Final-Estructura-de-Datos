@@ -131,21 +131,23 @@ def agregar_tanque():
 def agregar_conexion():
     print("Ingresa la información de la conexión.")
     try:
-        origen = input("Ingresa el nodo de origen (Tanque): ").strip()
-        destino = input("Ingresa el nodo de destino (Casa o tanque): ").strip()
+        origen = input("Ingresa el nodo de origen (Tanque o Casa): ").strip()
+        lista = "Para Casa: Casa a Casa,\nPara Tanque: Tanque a Casa, Tanque a Tanque."
+        destino = input(f"Ingresa el nodo de destino (Casa o Tanque). Tenga en cuenta que:\n{lista}\n").strip()
         if not origen or not destino:
             print("Error: El origen y el destino no pueden estar vacíos.")
             return
-        
-        capacidad = input("Ingresa la capacidad de la conexión: ")
+        capacidad = input("Ingresa la capacidad de la conexión: ").strip()
         capacidad = int(capacidad)
         if capacidad <= 0:
             print("Error: La capacidad debe ser un número positivo.")
             return
-        
+        # Intentar agregar la conexión a la red
         red.agregar_conexion(origen, destino, capacidad)
+        # Guardar y recargar la red para mantener la persistencia
         red.guardar_a_json('data/red_acueducto.json')
         red.cargar_desde_json('data/red_acueducto.json')
+        # Visualizar la red
         red.visualizar_red()
     except ValueError:
         print("Error: La capacidad debe ser un número entero.")
