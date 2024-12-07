@@ -70,6 +70,61 @@ def salir():
     print("Gracias por usar la interfaz de acueductos.")
 
 #AGREGAR BARRIO:
+def agregar_barrio():
+    print("Ingresa la información del nuevo barrio.")
+    
+    try:
+        # Solicitar el nombre del barrio
+        barrio = input("Ingresa el nombre del barrio: ").strip()
+        if not barrio:
+            print("Error: El nombre del barrio no puede estar vacío.")
+            return
+        
+        # Solicitar el color asociado al barrio
+        color = input("Ingresa el color asociado al barrio: ").strip()
+        if not color:
+            print("Error: El color no puede estar vacío.")
+            return
+        
+        # Intentar agregar el barrio con su color
+        red.agregar_barrio(barrio, color)
+        
+        # Guardar cambios en el archivo JSON
+        red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+
+#ELIMINAR BARRIO:
+def eliminar_barrio():
+    print("Eliminar un barrio.")
+    
+    try:
+        # Mostrar los barrios disponibles
+        print(f"Barrios disponibles: {', '.join(red.barrios_permitidos.keys())}")
+        
+        # Solicitar el nombre del barrio a eliminar
+        barrio = input("Ingresa el nombre del barrio que deseas eliminar: ").strip()
+        if not barrio:
+            print("Error: El nombre del barrio no puede estar vacío.")
+            return
+        
+        # Verificar si el barrio existe antes de eliminarlo
+        if barrio not in red.barrios_permitidos:
+            print(f"Error: El barrio '{barrio}' no existe.")
+            return
+        
+        # Intentar eliminar el barrio
+        red.eliminar_barrio(barrio)
+        
+        # Guardar cambios en el archivo JSON
+        red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()
+    except Exception as e:
+        print(f"Error inesperado: {e}")
+
 def agregar_casa():
     print("Ingresa la información de la casa.")
     
@@ -79,14 +134,20 @@ def agregar_casa():
             print("Error: El nombre de la casa no puede estar vacío.")
             return
         
-        demanda = input("Ingresa la demanda que tiene la casa: ")
+        demanda = input("Ingresa la demanda que tiene la casa: ").strip()
         demanda = int(demanda)
         if demanda <= 0:
             print("Error: La demanda debe ser un número positivo.")
             return
         
-        # Intentar agregar el barrio
-        red.agregar_casa(nombre, demanda)
+        # Consultar barrios permitidos desde la red
+        barrio = input(f"Ingresa el barrio de la casa ({', '.join(red.barrios_permitidos)}): ").strip()
+        if barrio not in red.barrios_permitidos:
+            print(f"Error: El barrio debe ser uno de los siguientes: {', '.join(red.barrios_permitidos)}.")
+            return
+        
+        # Intentar agregar la casa con su barrio
+        red.agregar_casa(nombre, demanda, barrio)
         
         # Guardar cambios en el archivo JSON
         red.guardar_a_json('data/red_acueducto.json')
@@ -119,7 +180,16 @@ def agregar_tanque():
             print("Error: El nivel actual debe estar entre 0 y la capacidad máxima.")
             return
         
-        red.agregar_tanque(id_tanque, capacidad, nivel_actual)
+        # Consultar barrios permitidos desde la red
+        barrio = input(f"Ingresa el barrio de la casa ({', '.join(red.barrios_permitidos)}): ").strip()
+        if barrio not in red.barrios_permitidos:
+            print(f"Error: El barrio debe ser uno de los siguientes: {', '.join(red.barrios_permitidos)}.")
+            return
+        
+        # Intentar agregar el tanque con su barrio
+        red.agregar_tanque(id_tanque, capacidad, nivel_actual,barrio)
+        
+        #Guardar cambios en el archivo json
         red.guardar_a_json('data/red_acueducto.json')
         red.cargar_desde_json('data/red_acueducto.json')
         red.visualizar_red()
@@ -342,6 +412,7 @@ def actualizar_valores():
             elif valor.replace('.', '', 1).isdigit():
                 valor = float(valor)
             nuevos_valores[clave] = valor
+        
         # Llamar a la función actualizar_valores
         if red.actualizar_valores(tipo, identificador, **nuevos_valores):
             # Guardar los cambios en el archivo JSON
