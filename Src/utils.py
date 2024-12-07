@@ -10,6 +10,16 @@ class RedDeAcueducto:
         self.tanques = {}
         self.conexiones = []
         self.grafo = None
+    
+    @property
+    def nodos(self):
+        # Crear un conjunto de todos los nodos a partir de las conexiones
+        todos_nodos = set()
+        for conexion in self.conexiones:
+            todos_nodos.add(conexion.origen)
+            todos_nodos.add(conexion.destino)
+        return todos_nodos
+    
     def cargar_desde_json(self, archivo_json):
         """
         Carga la red desde un archivo JSON.
@@ -612,3 +622,67 @@ class RedDeAcueducto:
         else:
             print(f"Error: Tipo '{tipo}' no reconocido. Use 'casa', 'tanque' o 'conexion'.")
             return False
+    
+    #CAMBIAR DIRECCIÓN DEL FLUJO:
+    def cambiar_sentido_flujo(self, origen, destino, capacidad):
+        """
+        Cambia el sentido del flujo en una conexión y redistribuye el agua en la red.
+        Si el cambio de sentido es válido, actualiza las conexiones y recalcula el flujo de agua.
+        
+        :param origen: Nodo de origen.
+        :param destino: Nodo de destino.
+        :param capacidad: Capacidad de la conexión.
+        :return: Mensaje sobre si el cambio fue exitoso o si ocurrió un error.
+        """
+        # Verificar si la conexión existe
+        conexion_existente = next((c for c in self.conexiones if c.origen == origen and c.destino == destino), None)
+        if not conexion_existente:
+            return f"Error: No existe una conexión entre {origen} y {destino}."
+        # Verificar si la capacidad a invertir es válida
+        if capacidad > conexion_existente.capacidad:
+            return f"Error: La capacidad solicitada excede la capacidad disponible en la conexión ({conexion_existente.capacidad})."
+        # Validar restricciones para la nueva conexión resultante
+        if destino in self.casa and origen in self.tanques:
+            nueva_conexion_permitida = False
+            return "Error: El cambio de flujo generaría una conexión no permitida Casa -> Tanque."
+        elif destino in self.casa and origen in self.casa:
+            nueva_conexion_permitida = True  # Casa → Casa (permitido)
+        elif destino in self.tanques and origen in self.tanques:
+            nueva_conexion_permitida = True  # Tanque → Tanque (permitido)
+        else:
+            nueva_conexion_permitida = False  # Cualquier otra combinación es inválida
+        if not nueva_conexion_permitida:
+            return "Error: El cambio de flujo resultaría en una conexión no permitida."
+        # Realizar el cambio de flujo
+        conexion_existente.capacidad -= capacidad
+        if conexion_existente.capacidad == 0:
+            self.conexiones.remove(conexion_existente)  # Eliminar la conexión si ya no tiene capacidad
+        # Crear nueva conexión en el sentido inverso
+        nueva_conexion = Conexion(
+            origen=destino, destino=origen, capacidad=capacidad, color=conexion_existente.color
+        )
+        self.conexiones.append(nueva_conexion)
+        return f"Flujo revertido: {capacidad} unidades de agua ahora fluyen de {destino} a {origen}."
+    
+    #RECALCULAR FLUJO DEL AGUA:
+    def recalcular_flujo(self):
+        """
+        Recalcula el flujo total en la red después de cualquier cambio.
+        Se debe ajustar el flujo hacia las casas y los tanques según las nuevas direcciones.
+        """
+        # Recalcular el flujo en cada nodo (tanque y casa) para reflejar los cambios
+        for nodo in list(self.casa.keys()) + list(self.tanques.keys()):
+            flujo_total = 0
+            # Calcular el flujo total hacia el nodo desde las conexiones entrantes
+            for conexion in self.conexiones:
+                if conexion.destino == nodo:
+                    flujo_total += conexion.capacidad
+            # Ajustar el flujo en el nodo (tanque/casa)
+            if nodo in self.casa:
+                casa = self.casa[nodo]
+                casa.suministro = flujo_total  # Actualizamos el suministro de la casa
+                print(f"Casa {nodo} ahora tiene un suministro de {flujo_total} litros.")
+            elif nodo in self.tanques:
+                tanque = self.tanques[nodo]
+                tanque.nivel_actual = max(0, tanque.nivel_actual - flujo_total)  # Actualizamos el nivel del tanque
+                print(f"Tanque {nodo} tiene un nivel actual de {tanque.nivel_actual} litros.")

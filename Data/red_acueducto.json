@@ -96,7 +96,7 @@
         {
             "origen": "Tanque3",
             "destino": "Casa5",
-            "capacidad": 50,
+            "capacidad": 50.0,
             "color": "yellow"
         },
         {

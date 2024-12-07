@@ -16,7 +16,6 @@ def main():
     # Mostrar información básica
     print("Nodos:", G.nodes)
     print("Conexiones:", G.edges(data=True))
-
     # Simular un flujo máximo
     flujo_max, flujo_rutas = nx.maximum_flow(G, "Tanque1", "Barrio1")
     print(f"Flujo máximo de Tanque1 a Barrio1: {flujo_max}")
@@ -38,6 +37,7 @@ def menu():
         7: simular_obstruccion,
         8: calcular_y_visualizar,
         9: actualizar_valores,
+        10: cambiar_sentido_flujo,
     }
     
     while i != 0:
@@ -46,6 +46,7 @@ def menu():
         print("Agregar: (1) Casa, (2) Tanque, (3) Conexión. Al acueducto")
         print("Eliminar: (4) Casa, (5) Tanque, (6) Conexión. Al acueducto")
         print("(7) Simular_obstrucción, (8) Encontrar rutas alternativas,(9) Actualizar valores (Casa, Tanque, Conexión).")
+        print("(10) Cambiar dirección de flujo")
         print("(0) Salir del menú")
         
         #Validar la entrada del usuario
@@ -357,6 +358,33 @@ def actualizar_valores():
         print(f"Error en el formato de entrada: {e}")
     except Exception as e:
         print(f"Error inesperado: {e}")
+
+def cambiar_sentido_flujo():
+    archivo_json = 'data/red_acueducto.json'
+    try:
+        # Cargar la red desde el archivo JSON
+        red.cargar_desde_json(archivo_json)
+        
+        # Solicitar datos al usuario
+        origen = input("Ingresa el nodo origen al que cambiar el flujo: ")
+        destino = input("Ingresa el nodo destino al que cambiar el flujo: ")
+        capacidad = float(input("Ingresa la capacidad que deseas revertir: "))
+        # Verificar que los nodos existen en la red
+        if origen not in red.nodos or destino not in red.nodos:
+            print("Error: Uno o ambos nodos no existen en la red.")
+            return
+        # Intentar cambiar el sentido del flujo
+        resultado = red.cambiar_sentido_flujo(origen, destino, capacidad)
+        print(resultado)
+        # Si el cambio fue exitoso, guardar la red actualizada en el archivo JSON
+        if "Error" not in resultado:
+            red.recalcular_flujo()
+            red.guardar_a_json(archivo_json)
+            print("Los cambios en la red han sido guardados exitosamente.")
+        else:
+            print("No se realizaron cambios en la red debido a un error.")
+    except Exception as e:
+        print(f"Ha ocurrido un error al cambiar el sentido del flujo: {e}")
 
 if __name__ == "__main__":
     #main()
