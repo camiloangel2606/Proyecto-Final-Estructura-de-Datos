@@ -1,191 +1,23 @@
 {
     "casas": [
-        {
-            "nombre": "Casa1",
-            "demanda": 0,
-            "barrio": "Fátima"
-        },
-        {
-            "nombre": "Casa2",
-            "demanda": 20,
-            "barrio": "Palermo"
-        },
-        {
-            "nombre": "Casa3",
-            "demanda": 50,
-            "barrio": "Cable"
-        },
-        {
-            "nombre": "Casa4",
-            "demanda": 0,
-            "barrio": "Fátima"
-        },
-        {
-            "nombre": "Casa5",
-            "demanda": 70,
-            "barrio": "Palermo"
-        },
-        {
-            "nombre": "Casa6",
-            "demanda": 30,
-            "barrio": "Cable"
-        },
-        {
-            "nombre": "Casa7",
-            "demanda": 40,
-            "barrio": "Fátima"
-        },
-        {
-            "nombre": "Casa8",
-            "demanda": 60,
-            "barrio": "Palermo"
-        },
-        {
-            "nombre": "Casa9",
-            "demanda": 90,
-            "barrio": "Cable"
-        },
-        {
-            "nombre": "Casa10",
-            "demanda": 25,
-            "barrio": "Fátima"
-        }
+        { "nombre": "Casa1", "demanda": 0, "barrio": "Fátima" },
+        { "nombre": "Casa2", "demanda": 20, "barrio": "Palermo" },
+        { "nombre": "Casa3", "demanda": 50, "barrio": "Cable" },
+        { "nombre": "Casa4", "demanda": 0, "barrio": "Fátima" },
+        { "nombre": "Casa5", "demanda": 70, "barrio": "Palermo" }
     ],
     "tanques": [
-        {
-            "id": "Tanque1",
-            "capacidad": 300,
-            "nivel_actual": 80,
-            "barrio": "Palermo"
-        },
-        {
-            "id": "Tanque2",
-            "capacidad": 500,
-            "nivel_actual": 200,
-            "barrio": "Cable"
-        },
-        {
-            "id": "Tanque3",
-            "capacidad": 400,
-            "nivel_actual": 100,
-            "barrio": "Fátima"
-        },
-        {
-            "id": "Tanque4",
-            "capacidad": 600,
-            "nivel_actual": 300,
-            "barrio": "Palermo"
-        },
-        {
-            "id": "Tanque5",
-            "capacidad": 700,
-            "nivel_actual": 500,
-            "barrio": "Cable"
-        }
+        { "id": "Tanque1", "capacidad": 300, "nivel_actual": 80, "barrio": "Palermo" },
+        { "id": "Tanque2", "capacidad": 500, "nivel_actual": 200, "barrio": "Cable" },
+        { "id": "Tanque3", "capacidad": 400, "nivel_actual": 100, "barrio": "Fátima" }
     ],
     "conexiones": [
-        {
-            "origen": "Tanque1",
-            "destino": "Casa1",
-            "capacidad": 20,
-            "color": "red"
-        },
-        {
-            "origen": "Tanque1",
-            "destino": "Casa3",
-            "capacidad": 30,
-            "color": "orange"
-        },
-        {
-            "origen": "Tanque2",
-            "destino": "Casa2",
-            "capacidad": 15,
-            "color": "yellow"
-        },
-        {
-            "origen": "Tanque2",
-            "destino": "Casa4",
-            "capacidad": 40,
-            "color": "blue"
-        },
-        {
-            "origen": "Tanque3",
-            "destino": "Casa5",
-            "capacidad": 50,
-            "color": "yellow"
-        },
-        {
-            "origen": "Tanque3",
-            "destino": "Casa6",
-            "capacidad": 30,
-            "color": "blue"
-        },
-        {
-            "origen": "Tanque4",
-            "destino": "Casa7",
-            "capacidad": 60,
-            "color": "orange"
-        },
-        {
-            "origen": "Tanque4",
-            "destino": "Casa8",
-            "capacidad": 50,
-            "color": "red"
-        },
-        {
-            "origen": "Tanque5",
-            "destino": "Casa9",
-            "capacidad": 70,
-            "color": "yellow"
-        },
-        {
-            "origen": "Tanque5",
-            "destino": "Casa10",
-            "capacidad": 40,
-            "color": "blue"
-        },
-        {
-            "origen": "Tanque1",
-            "destino": "Casa7",
-            "capacidad": 10,
-            "color": "yellow"
-        },
-        {
-            "origen": "Casa1",
-            "destino": "Casa3",
-            "capacidad": 20,
-            "color": "blue"
-        },
-        {
-            "origen": "Casa4",
-            "destino": "Casa5",
-            "capacidad": 20,
-            "color": "blue"
-        },
-        {
-            "origen": "Casa4",
-            "destino": "Casa6",
-            "capacidad": 20,
-            "color": "blue"
-        },
-        {
-            "origen": "Casa7",
-            "destino": "Casa9",
-            "capacidad": 30,
-            "color": "blue"
-        },
-        {
-            "origen": "Casa10",
-            "destino": "Casa2",
-            "capacidad": 15,
-            "color": "blue"
-        },
-        {
-            "origen": "Casa2",
-            "destino": "Casa8",
-            "capacidad": 10,
-            "color": "blue"
-        }
+        { "origen": "Tanque1", "destino": "Casa1", "capacidad": 20, "color": "red" },
+        { "origen": "Tanque2", "destino": "Casa2", "capacidad": 15, "color": "yellow" },
+        { "origen": "Tanque3", "destino": "Casa4", "capacidad": 30, "color": "blue" },
+        { "origen": "Casa1", "destino": "Casa4", "capacidad": 10, "color": "blue" },
+        { "origen": "Casa2", "destino": "Casa5", "capacidad": 20, "color": "yellow" },
+        { "origen": "Casa4", "destino": "Casa5", "capacidad": 10, "color": "blue" }
     ],
     "barrios_permitidos": {
         "Fátima": "aqua",

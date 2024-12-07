@@ -248,15 +248,33 @@ class RedDeAcueducto:
         
         return G
 
+    #VISUALIZAR RED:
     def visualizar_red(self):
         """
         Visualiza la red de acueducto utilizando NetworkX.
-        Los nodos se delinean con el color del barrio asociado.
+        Los nodos se organizan por barrios, agrupándolos visualmente.
         """
         G = self.construir_grafo()
         nodos_no_conectados = self.obtener_nodos_no_conectados()
-        # Posicionar nodos con ajuste de distancia
-        pos = nx.spring_layout(G, k=0.8, iterations=50)  # Ajuste de k para mayor separación
+        # Agrupar nodos por barrio
+        barrios = {}
+        for casa in self.casa.values():
+            barrios.setdefault(casa.barrio, []).append(casa.nombre)
+        for tanque in self.tanques.values():
+            barrios.setdefault(tanque.barrio, []).append(tanque.id_tanque)
+        # Crear un layout personalizado por barrio
+        pos = {}
+        offset_x, offset_y = 0, 0  # Desplazamiento inicial
+        spacing = 3  # Espaciado entre grupos de barrios
+        for i, (barrio, nodos) in enumerate(barrios.items()):
+            # Crear un layout circular para los nodos del barrio
+            barrio_pos = nx.circular_layout(G.subgraph(nodos))
+            # Ajustar posiciones según el offset actual
+            for nodo, (x, y) in barrio_pos.items():
+                pos[nodo] = (x + offset_x, y + offset_y)
+            # Actualizar el offset para el próximo barrio
+            offset_x += spacing
+            offset_y += spacing
         # Colores y etiquetas para las aristas
         edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
         edge_labels = {
@@ -267,7 +285,6 @@ class RedDeAcueducto:
         node_labels = {}
         node_colors = []
         node_edge_colors = []
-        # Agregar casas a las etiquetas, colores y bordes
         for casa in self.casa.values():
             suministro_total = sum(
                 conexion.capacidad
@@ -282,11 +299,10 @@ class RedDeAcueducto:
                 f"Excedente: {excedente:.1f}"
             )
             if suministro_total >= casa.demanda:
-                node_colors.append("green")  # Casa satisfecha
+                node_colors.append("green")
             else:
-                node_colors.append("yellow")  # Casa con demanda pendiente
+                node_colors.append("yellow")
             node_edge_colors.append(self.barrios_permitidos.get(casa.barrio, "black"))
-        # Agregar tanques a las etiquetas, colores y bordes
         for tanque in self.tanques.values():
             capacidad_disponible = tanque.nivel_actual - sum(
                 conexion.capacidad
@@ -297,39 +313,38 @@ class RedDeAcueducto:
                 f"{tanque.id_tanque}\nCapacidad restante: {capacidad_disponible:.1f}"
             )
             if capacidad_disponible <= 0:
-                node_colors.append("red")  # Tanques agotados
+                node_colors.append("red")
             elif capacidad_disponible <= 0.2 * tanque.capacidad:
-                node_colors.append("orange")  # Capacidad baja
+                node_colors.append("orange")
             else:
-                node_colors.append("green")  # Capacidad suficiente
+                node_colors.append("green")
             node_edge_colors.append(self.barrios_permitidos.get(tanque.barrio, "black"))
         # Dibujar el grafo
-        plt.figure(figsize=(12, 8))  # Ajustar tamaño del gráfico
+        plt.figure(figsize=(12, 8))
         nx.draw(
             G,
             pos,
-            with_labels=False,  # Desactivamos las etiquetas predeterminadas
+            with_labels=False,
             edge_color=edge_colors,
             node_color=node_colors,
             node_size=500,
             font_size=10,
             font_color="black",
-            linewidths=2,  # Grosor del borde
+            linewidths=2,
         )
         nx.draw_networkx_edges(
             G,
             pos,
             edge_color=edge_colors,
-            width=0.8,  # Grosor ajustado para las aristas
+            width=0.8,
         )
         nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
         nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=9)
-        # Aplicar colores de borde personalizados
         nx.draw_networkx_nodes(
             G,
             pos,
             node_color=node_colors,
-            edgecolors=node_edge_colors,  # Delineado de nodos
+            edgecolors=node_edge_colors,
             node_size=500,
             linewidths=2,
         )
@@ -338,13 +353,13 @@ class RedDeAcueducto:
                 G,
                 pos,
                 nodelist=list(nodos_no_conectados),
-                node_color="gray",  # Color distintivo para nodos no conectados
+                node_color="gray",
                 node_size=500,
-                edgecolors="black",  # Borde negro para nodos no conectados
+                edgecolors="black",
                 linewidths=2,
             )
         plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
-        plt.title("Visualización de la Red de Acueducto")
+        plt.title("Visualización de la Red de Acueducto (Agrupada por Barrios)")
         plt.show()
 
     #AGREGAR BARRIO:
