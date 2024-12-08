@@ -93,22 +93,44 @@ elif opcion == "Agregar Conexión":
             "Para Casa: Casa a Casa,\nPara Tanque: Tanque a Casa, Tanque a Tanque."
         ).strip()
         capacidad = st.number_input("Ingresa la capacidad de la conexión:", min_value=1, step=1)
+
         if st.button("Agregar Conexión"):
             if not origen or not destino:
                 st.error("Error: El origen y el destino no pueden estar vacíos.")
             elif origen not in red.nodos or destino not in red.nodos:
                 st.error("Error: Uno o ambos nodos no existen en la red.")
             else:
-                try:
-                    # Intentar agregar la conexión
-                    red.agregar_conexion(origen, destino, capacidad)
-                    # Guardar la red
-                    red.guardar_a_json('data/red_acueducto.json')
-                    st.success(f"Conexión agregada exitosamente entre {origen} y {destino} con capacidad {capacidad}.")
-                    # Visualizar la red
-                    red.visualizar_red()
-                except Exception as e:
-                    st.error(f"Error al agregar la conexión: {e}")
+                # Validar que el nodo origen tenga suficiente capacidad o excedente
+                capacidad_disponible = 0
+                if origen in red.tanques:  # Validar capacidad del tanque
+                    tanque = red.tanques[origen]
+                    capacidad_disponible = tanque.nivel_actual - sum(
+                        conexion.capacidad for conexion in red.conexiones if conexion.origen == origen
+                    )
+                elif origen in red.casa:  # Validar excedente de la casa
+                    suministro_total = sum(
+                        conexion.capacidad for conexion in red.conexiones if conexion.destino == origen
+                    )
+                    demanda_total = red.casa[origen].demanda
+                    capacidad_disponible = max(suministro_total - demanda_total, 0)
+
+                if capacidad > capacidad_disponible:
+                    st.error(
+                        f"Error: El nodo origen '{origen}' no tiene suficiente capacidad disponible. "
+                        f"Capacidad disponible: {capacidad_disponible:.1f}, Capacidad requerida: {capacidad:.1f}."
+                    )
+                else:
+                    try:
+                        # Intentar agregar la conexión
+                        red.agregar_conexion(origen, destino, capacidad)
+                        # Guardar la red
+                        red.guardar_a_json('data/red_acueducto.json')
+                        st.success(f"Conexión agregada exitosamente entre {origen} y {destino} con capacidad {capacidad}.")
+                        # Visualizar la red
+                        red.cargar_desde_json('data/red_acueducto.json')
+                        red.visualizar_red()
+                    except Exception as e:
+                        st.error(f"Error al agregar la conexión: {e}")
     except Exception as e:
         st.error(f"Error inesperado: {e}")
 

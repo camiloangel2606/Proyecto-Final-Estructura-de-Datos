@@ -472,7 +472,8 @@ class RedDeAcueducto:
         conexiones_eliminadas -= len(self.conexiones)
         del self.tanques[id_tanque]
         print(f"Tanque '{id_tanque}' eliminado con éxito junto con {conexiones_eliminadas} conexiones asociadas.")
-    
+
+    #AGREGAR CONEXIÓN:
     def agregar_conexion(self, origen, destino, capacidad, color="blue"):
         """
         Agrega una conexión entre dos nodos, con validaciones adicionales.
@@ -624,7 +625,6 @@ class RedDeAcueducto:
         plt.title("Rutas Alternativas")
         plt.show()
 
-    # CALCULAR Y VISUALIZAR RUTAS
     # CALCULAR Y VISUALIZAR RUTAS
     def calcular_y_visualizar_rutas(self, casas_afectadas):
         """
