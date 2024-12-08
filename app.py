@@ -160,15 +160,28 @@ elif opcion == "Eliminar Conexión":
             st.error(f"Error al eliminar la conexión: {e}")
 
 #SIMULAR OBSTRUCCIÓN:
+# Dentro de la sección de Streamlit en app.py:
 elif opcion == "Simular Obstrucción":
     st.subheader("Simular Obstrucción")
     try:
-        # Llamar a la función de simular obstrucción
-        red.simular_obstruccion()
-        red.guardar_a_json('data/red_acueducto.json')
-        red.cargar_desde_json('data/red_acueducto.json')
-        red.visualizar_red()  # Mostrar la red después de la simulación
-        st.success("Obstrucción simulada correctamente.")
+        # Solicitar los valores de entrada a través de Streamlit (en lugar de input())
+        origen = st.text_input("Ingrese el nodo de origen de la conexión:")
+        destino = st.text_input("Ingrese el nodo de destino de la conexión:")
+        nivel_gravedad = st.number_input("Ingrese el nivel de gravedad (0 a 100):", min_value=0.0, max_value=100.0, value=0.0)
+
+        # Solo ejecutar la simulación si el botón es presionado
+        if st.button("Simular Obstrucción"):
+            if not origen or not destino:
+                st.error("Por favor ingrese ambos nodos: origen y destino.")
+            elif nivel_gravedad == 0:
+                st.error("Por favor ingrese un nivel de gravedad mayor que 0.")
+            else:
+                # Llamar a la función de simulación con los valores proporcionados
+                red.simular_obstruccion(origen, destino, nivel_gravedad / 100)  # Convertir a porcentaje
+                red.guardar_a_json('data/red_acueducto.json')
+                red.cargar_desde_json('data/red_acueducto.json')
+                red.visualizar_red()  # Mostrar la red después de la simulación
+                st.success("Obstrucción simulada correctamente.")
     except Exception as e:
         st.error(f"Error al simular la obstrucción: {e}")
 
@@ -222,46 +235,39 @@ elif opcion == "Actualizar Valores":
     st.subheader("Actualizar Valores")
     try:
         # Solicitar tipo y identificador
-        tipo = st.selectbox("Selecciona el tipo de actualización", ["Casa", "Tanque", "Conexión"])
-        identificador = st.text_input(f"Ingresa el identificador del {tipo} que deseas actualizar:").strip()
-        nuevos_valores_raw = st.text_input(
-            f"Ingresa los nuevos valores para el {tipo} (por ejemplo: clave1=valor1,clave2=valor2):"
-        ).strip()
-        # Verificar si se presionó el botón "Actualizar"
+        tipo = st.selectbox("Selecciona el tipo de actualización", ["Casa", "Tanque", "Conexion"])
+        # Solicitar identificador dependiendo del tipo
+        if tipo == "Conexion":
+            origen = st.text_input("Ingresa el nodo de origen de la conexión:").strip()
+            destino = st.text_input("Ingresa el nodo de destino de la conexión:").strip()
+            identificador = (origen, destino)
+        else:
+            identificador = st.text_input(f"Ingresa el identificador del {tipo} que deseas actualizar:").strip()
+        nuevos_valores_raw = st.text_input(f"Ingresa los nuevos valores para el {tipo} (por ejemplo: clave1=valor1,clave2=valor2):").strip()
         if st.button("Actualizar"):
             if not identificador:
                 st.error(f"Por favor, ingresa un identificador válido para el {tipo}.")
             elif not nuevos_valores_raw:
                 st.error("Por favor, ingresa los nuevos valores para la actualización.")
             else:
-                # Verificación de existencia de nodo o conexión
-                if tipo == "Casa" and identificador not in red.nodos:
-                    st.error(f"La casa con el identificador {identificador} no existe en la red.")
-                elif tipo == "Tanque" and identificador not in red.nodos:
-                    st.error(f"El tanque con el identificador {identificador} no existe en la red.")
-                elif tipo == "Conexión" and not any(conexion.origen == identificador or conexion.destino == identificador for conexion in red.conexiones):
-                    st.error(f"La conexión con el identificador {identificador} no existe en la red.")
+                nuevos_valores = {}
+                try:
+                    for item in nuevos_valores_raw.split(","):
+                        clave, valor = item.split("=")
+                        clave, valor = clave.strip(), valor.strip()
+                        if valor.isdigit():
+                            valor = int(valor)
+                        elif valor.replace('.', '', 1).isdigit():
+                            valor = float(valor)
+                        nuevos_valores[clave] = valor
+                except ValueError as e:
+                    st.error(f"Error en el formato de entrada: {e}. Revisa tu formato de clave=valor.")
+                # Intentar actualizar los valores en la red
+                if red.actualizar_valores(tipo, identificador, **nuevos_valores):
+                    red.guardar_a_json('data/red_acueducto.json')
+                    st.success("Cambios guardados correctamente.")
                 else:
-                    nuevos_valores = {}
-                    try:
-                        for item in nuevos_valores_raw.split(","):
-                            clave, valor = item.split("=")
-                            clave, valor = clave.strip(), valor.strip()
-                            # Convertir valores numéricos si es necesario
-                            if valor.isdigit():
-                                valor = int(valor)
-                            elif valor.replace('.', '', 1).isdigit():
-                                valor = float(valor)
-                            nuevos_valores[clave] = valor
-                    except ValueError as e:
-                        st.error(f"Error en el formato de entrada: {e}. Revisa tu formato de clave=valor.")
-                    if nuevos_valores:
-                        # Intentar actualizar los valores en la red
-                        if red.actualizar_valores(tipo, identificador, **nuevos_valores):
-                            red.guardar_a_json('data/red_acueducto.json')
-                            st.success("Cambios guardados correctamente.")
-                        else:
-                            st.error("No se pudo realizar la actualización. Verifica el identificador y los valores.")
+                    st.error("No se pudo realizar la actualización. Verifica el identificador y los valores.")
     except Exception as e:
         st.error(f"Error al actualizar valores: {e}")
 
@@ -298,7 +304,6 @@ elif opcion == "Identificar Posiciones Óptimas":
     st.subheader("Identificar Posiciones Óptimas para Tanques")
     try:
         umbral_demanda = st.number_input("Ingresa el umbral de demanda mínima por barrio (ej. 50):", min_value=0.0)
-
         if umbral_demanda > 0:
             # Identificar posiciones óptimas
             posiciones = red.identificar_posiciones_optimas_interactivo()

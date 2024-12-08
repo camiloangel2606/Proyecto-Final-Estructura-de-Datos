@@ -29,6 +29,11 @@
             "nombre": "Casa5",
             "demanda": 30,
             "barrio": "F\u00c3\u00a1tima"
+        },
+        {
+            "nombre": "Casa6",
+            "demanda": 30,
+            "barrio": "Palermo"
         }
     ],
     "tanques": [
@@ -55,7 +60,7 @@
         {
             "origen": "Tanque2",
             "destino": "Casa2",
-            "capacidad": 15,
+            "capacidad": 60,
             "color": "yellow"
         },
         {
@@ -67,14 +72,14 @@
         {
             "origen": "Tanque2",
             "destino": "Casa3",
-            "capacidad": 50,
-            "color": "blue"
+            "capacidad": 4.999999999999999,
+            "color": "red"
         },
         {
             "origen": "Tanque1",
             "destino": "Casa2",
-            "capacidad": 20,
-            "color": "blue"
+            "capacidad": 14.3568,
+            "color": "yellow"
         },
         {
             "origen": "Tanque3",
@@ -86,6 +91,12 @@
             "origen": "Tanque1",
             "destino": "Casa1",
             "capacidad": 20,
+            "color": "blue"
+        },
+        {
+            "origen": "Tanque2",
+            "destino": "Casa6",
+            "capacidad": 30,
             "color": "blue"
         }
     ]

@@ -541,51 +541,33 @@ class RedDeAcueducto:
         else:
             raise ValueError(f"La conexión entre {origen} y {destino} no existe en la red.")
 
-    #SIMULAR OBSTRUCCIÓN
-    def simular_obstruccion(self, origen=None, destino=None, nivel_gravedad=None):
+    #SIMULAR OBSTRUCCCIONES:
+    def simular_obstruccion(self, origen, destino, nivel_gravedad):
         """
         Simula obstrucciones en conexiones. Permite la entrada manual o automática si se proporcionan argumentos.
         """
-        while True:
-            if origen is None or destino is None or nivel_gravedad is None:
-                try:
-                    origen = input("Ingrese el nodo de origen de la conexión: ")
-                    destino = input("Ingrese el nodo de destino de la conexión: ")
-                    nivel_gravedad = float(input("Ingrese el nivel de gravedad (0 a 100): "))
-                    nivel_gravedad = nivel_gravedad/100
-                except ValueError:
-                    print("Error: Ingrese un nivel de gravedad válido (0 a 100).")
-                    continue
-            if nivel_gravedad < 0.0 or nivel_gravedad > 1.0:
-                print("Error: El nivel de gravedad debe estar entre 0.0 y 100.")
-                origen, destino, nivel_gravedad = None, None, None
-                continue
-            conexion_encontrada = False
-            for conexion in self.conexiones:
-                if conexion.origen == origen and conexion.destino == destino:
-                    conexion_encontrada = True
-                    nueva_capacidad = conexion.capacidad * (1.0 - nivel_gravedad)
-                    conexion.capacidad = max(nueva_capacidad, 0)
-                    if nivel_gravedad == 0.0:
-                        conexion.color = "blue"
-                    elif nivel_gravedad <= 0.33:
-                        conexion.color = "yellow"
-                    elif nivel_gravedad <= 0.66:
-                        conexion.color = "orange"
-                    else:
-                        conexion.color = "red"
-                    print(f"\nObstrucción simulada en la conexión de '{origen}' a '{destino}'.")
-                    print(f"Capacidad reducida a {conexion.capacidad:.2f} y color actualizado a '{conexion.color}'.")
-                    break
-            if not conexion_encontrada:
-                print(f"Error: No se encontró la conexión de '{origen}' a '{destino}' para simular la obstrucción.")
-            if origen is not None and destino is not None and nivel_gravedad is not None:
-                # Si se pasaron argumentos, salir después de una simulación
+        # Verificar que los valores no sean vacíos
+        if not origen or not destino or nivel_gravedad is None:
+            raise ValueError("Debe ingresar origen, destino y nivel de gravedad")
+        # Buscar la conexión
+        conexion_encontrada = False
+        for conexion in self.conexiones:
+            if conexion.origen == origen and conexion.destino == destino:
+                conexion_encontrada = True
+                nueva_capacidad = conexion.capacidad * (1.0 - nivel_gravedad)
+                conexion.capacidad = max(nueva_capacidad, 0)
+                # Cambiar el color según el nivel de gravedad
+                if nivel_gravedad == 0.0:
+                    conexion.color = "blue"
+                elif nivel_gravedad <= 0.33:
+                    conexion.color = "yellow"
+                elif nivel_gravedad <= 0.66:
+                    conexion.color = "orange"
+                else:
+                    conexion.color = "red"
                 break
-            continuar = input("¿Desea simular otra obstrucción? (s/n): ").strip().lower()
-            if continuar != 's':
-                print("Finalizando simulación de obstrucciones.")
-                break
+        if not conexion_encontrada:
+            raise ValueError(f"No se encontró la conexión de '{origen}' a '{destino}' para simular la obstrucción.")
 
     #ENCONTRAR UNA RUTA ALTERNATIVA
     def encontrar_ruta_alternativa(self, origen, destino):
@@ -643,24 +625,31 @@ class RedDeAcueducto:
         plt.show()
 
     # CALCULAR Y VISUALIZAR RUTAS
+    # CALCULAR Y VISUALIZAR RUTAS
     def calcular_y_visualizar_rutas(self, casas_afectadas):
         """
         Encuentra y visualiza las rutas alternativas para las casas afectadas.
-
         Parámetros:
         - casas_afectadas: Lista de nodos afectados (casas).
         """
         G = self.construir_grafo()
         rutas = []
+        
         for casa in casas_afectadas:
             # Buscar ruta desde cualquier tanque al nodo afectado
             for tanque in [n for n in G.nodes() if "Tanque" in n]:
                 ruta = self.encontrar_ruta_alternativa(origen=tanque, destino=casa)
                 if ruta:
+                    # Imprimir la ruta encontrada solo para la primera casa afectada
+                    st.write(f"Ruta alternativa para la casa '{casa}' desde el tanque '{tanque}': {ruta}")
                     rutas.append(ruta)
                     break  # Salir del bucle si se encuentra una ruta válida
-        # Visualizar las rutas
-        self.visualizar_rutas_alternativas(rutas)
+                    
+        # Visualizar las rutas encontradas
+        if rutas:
+            self.visualizar_rutas_alternativas(rutas)
+        else:
+            st.error("No se encontraron rutas alternativas.")
 
     # APLICAR OBSTRUCCIONES
     def aplicar_obstrucciones(self, obstrucciones):
@@ -675,19 +664,19 @@ class RedDeAcueducto:
                 G[u][v]['weight'] = float('inf')  # Bloquear la arista
                 G[u][v]['color'] = "red"  # Marcar como obstruida
     
-    #ACTUALIZAR VALORES(CASA, TANQUE, CONEXIÓN)
     def actualizar_valores(self, tipo, identificador, **nuevos_valores):
         """
         Actualiza los valores de una casa, tanque o conexión en la red.
-
         Parámetros:
         - tipo (str): Tipo del objeto a actualizar ('Casa', 'Tanque', 'Conexion').
         - identificador (str): Identificador del objeto.
         - nuevos_valores (dict): Valores nuevos a asignar.
-
         Retorna:
         - bool: True si la actualización fue exitosa, False en caso contrario.
         """
+        print(f"Tipo de objeto: {tipo}, Identificador: {identificador}, Nuevos valores: {nuevos_valores}")
+        
+        # Actualización de Casa
         if tipo == "Casa":
             if identificador in self.casa:
                 casa = self.casa[identificador]
@@ -706,12 +695,14 @@ class RedDeAcueducto:
                         return False
                     casa.barrio = nuevo_barrio
                     print(f"Casa '{identificador}' actualizada: barrio={casa.barrio}")
-                    
+                
+                # Guardar cambios en JSON
+                self.guardar_a_json('data/red_acueducto.json')
                 return True
-
             else:
                 print(f"Error: La casa '{identificador}' no existe.")
         
+        # Actualización de Tanque
         elif tipo == "Tanque":
             if identificador in self.tanques:
                 tanque = self.tanques[identificador]
@@ -728,32 +719,46 @@ class RedDeAcueducto:
                         print(f"Error: El barrio '{nuevo_barrio}' no está permitido.")
                         return False
                     tanque.barrio = nuevo_barrio
-                    
+                
+                # Guardar cambios en JSON
+                self.guardar_a_json('data/red_acueducto.json')
                 print(f"Tanque '{identificador}' actualizado: capacidad={tanque.capacidad}, nivel_actual={tanque.nivel_actual}, barrio={tanque.barrio}")
                 return True
             else:
                 print(f"Error: El tanque '{identificador}' no existe.")
         
+        # Actualización de Conexión
         elif tipo == "Conexion":
+            # Revisar si la conexión existe
             conexion_encontrada = None
             for conexion in self.conexiones:
                 if conexion.origen == identificador[0] and conexion.destino == identificador[1]:
                     conexion_encontrada = conexion
                     break
+            
             if conexion_encontrada:
+                print(f"Conexión encontrada: {conexion_encontrada}")
+                
+                # Actualizar los valores de la conexión
                 if "capacidad" in nuevos_valores:
                     conexion_encontrada.capacidad = nuevos_valores["capacidad"]
+                    print(f"Conexión actualizada: capacidad={conexion_encontrada.capacidad}")
+                
                 if "color" in nuevos_valores:
                     conexion_encontrada.color = nuevos_valores["color"]
-                print(f"Conexión '{identificador}' actualizada: capacidad={conexion_encontrada.capacidad}, color={conexion_encontrada.color}")
+                    print(f"Conexión actualizada: color={conexion_encontrada.color}")
+                
+                # Guardar cambios en JSON
+                self.guardar_a_json('data/red_acueducto.json')
                 return True
             else:
                 print(f"Error: No se encontró la conexión '{identificador}'.")
+                return False
         
         else:
             print(f"Error: Tipo '{tipo}' no reconocido. Use 'Casa', 'Tanque' o 'Conexion'.")
             return False
-    
+
     #CAMBIAR DIRECCIÓN DEL FLUJO:
     def cambiar_sentido_flujo(self, origen, destino, capacidad):
         """
