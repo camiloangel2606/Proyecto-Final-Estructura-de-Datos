@@ -1,6 +1,7 @@
 import json
 import heapq
 import networkx as nx
+import streamlit as st
 import matplotlib.pyplot as plt
 from models import Casa, Tanque, Conexion
 
@@ -67,7 +68,6 @@ class RedDeAcueducto:
             print(f"Error en el formato del archivo JSON: {e}")
         except Exception as e:
             print(f"Error al cargar el archivo JSON: {e}")
-
 
     def guardar_a_json(self, archivo_json):
         """
@@ -256,32 +256,31 @@ class RedDeAcueducto:
         """
         G = self.construir_grafo()
         nodos_no_conectados = self.obtener_nodos_no_conectados()
+        
         # Agrupar nodos por barrio
         barrios = {}
         for casa in self.casa.values():
             barrios.setdefault(casa.barrio, []).append(casa.nombre)
         for tanque in self.tanques.values():
             barrios.setdefault(tanque.barrio, []).append(tanque.id_tanque)
+        
         # Crear un layout personalizado por barrio
         pos = {}
         offset_x, offset_y = 0, 0  # Desplazamiento inicial
         spacing = 3  # Espaciado entre grupos de barrios
         for i, (barrio, nodos) in enumerate(barrios.items()):
-            # Crear un layout circular para los nodos del barrio
             barrio_pos = nx.circular_layout(G.subgraph(nodos))
-            # Ajustar posiciones según el offset actual
             for nodo, (x, y) in barrio_pos.items():
                 pos[nodo] = (x + offset_x, y + offset_y)
-            # Actualizar el offset para el próximo barrio
             offset_x += spacing
             offset_y += spacing
-        # Colores y etiquetas para las aristas
+
         edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
         edge_labels = {
-            (u, v): f"{data['capacity']:.1f}"  # Etiqueta de capacidad en las aristas
+            (u, v): f"{data['capacity']:.1f}"
             for u, v, data in G.edges(data=True)
         }
-        # Crear etiquetas, colores y bordes para nodos
+
         node_labels = {}
         node_colors = []
         node_edge_colors = []
@@ -303,6 +302,7 @@ class RedDeAcueducto:
             else:
                 node_colors.append("yellow")
             node_edge_colors.append(self.barrios_permitidos.get(casa.barrio, "black"))
+        
         for tanque in self.tanques.values():
             capacidad_disponible = tanque.nivel_actual - sum(
                 conexion.capacidad
@@ -319,8 +319,9 @@ class RedDeAcueducto:
             else:
                 node_colors.append("green")
             node_edge_colors.append(self.barrios_permitidos.get(tanque.barrio, "black"))
-        # Dibujar el grafo
-        plt.figure(figsize=(12, 8))
+        
+        # Crear la figura para Streamlit
+        fig, ax = plt.subplots(figsize=(12, 8))
         nx.draw(
             G,
             pos,
@@ -331,15 +332,17 @@ class RedDeAcueducto:
             font_size=10,
             font_color="black",
             linewidths=2,
+            ax=ax
         )
         nx.draw_networkx_edges(
             G,
             pos,
             edge_color=edge_colors,
             width=0.8,
+            ax=ax
         )
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8)
-        nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=9)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=8, ax=ax)
+        nx.draw_networkx_labels(G, pos, labels=node_labels, font_size=9, ax=ax)
         nx.draw_networkx_nodes(
             G,
             pos,
@@ -347,20 +350,11 @@ class RedDeAcueducto:
             edgecolors=node_edge_colors,
             node_size=500,
             linewidths=2,
+            ax=ax
         )
-        if nodos_no_conectados:
-            nx.draw_networkx_nodes(
-                G,
-                pos,
-                nodelist=list(nodos_no_conectados),
-                node_color="gray",
-                node_size=500,
-                edgecolors="black",
-                linewidths=2,
-            )
-        plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
-        plt.title("Visualización de la Red de Acueducto (Agrupada por Barrios)")
-        plt.show()
+        
+        # Mostrar el gráfico en Streamlit
+        st.pyplot(fig)
 
     #AGREGAR BARRIO:
     def agregar_barrio(self, barrio, color):
