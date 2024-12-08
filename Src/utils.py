@@ -15,13 +15,14 @@ class RedDeAcueducto:
     
     @property
     def nodos(self):
-        # Crear un conjunto de todos los nodos a partir de las conexiones
-        todos_nodos = set()
+        # Crear un conjunto de nodos a partir de casas, tanques y conexiones
+        todos_nodos = set(self.casa.keys()) | set(self.tanques.keys())
         for conexion in self.conexiones:
             todos_nodos.add(conexion.origen)
             todos_nodos.add(conexion.destino)
         return todos_nodos
-    
+
+    #CARGAR JSON:
     def cargar_desde_json(self, archivo_json):
         """
         Carga la red desde un archivo JSON.
@@ -34,34 +35,50 @@ class RedDeAcueducto:
                 print(f"Contenido del archivo JSON: {data}")  # Depuración
             # Limpiar estructuras de datos existentes
             self.barrios_permitidos = data.get("barrios_permitidos", ["Fátima", "Palermo", "Cable"])
-            self.casa = {}  # Usar diccionario para indexar casas
-            self.tanques = {}  # Usar diccionario para indexar tanques
-            self.conexiones = []  # Lista para conexiones
+            self.casa = {}
+            self.tanques = {}
+            self.conexiones = []
             # Cargar casas
             for casa in data.get('casas', []):
-                self.agregar_casa(
-                    nombre=casa['nombre'],
-                    demanda=casa['demanda'],
-                    barrio=casa.get('barrio', None)  # Obtener el barrio si existe en el JSON
-                )
+                if all(key in casa for key in ['nombre', 'demanda']):
+                    self.agregar_casa(
+                        nombre=casa['nombre'],
+                        demanda=casa['demanda'],
+                        barrio=casa.get('barrio', None)
+                    )
+                else:
+                    print(f"Casa con datos incompletos: {casa}")
             # Cargar tanques
             for tanque in data.get('tanques', []):
-                self.agregar_tanque(
-                    id_tanque=tanque['id'],
-                    capacidad=tanque['capacidad'],
-                    nivel_actual=tanque['nivel_actual'],
-                    barrio=tanque.get('barrio', None)  # Obtener el barrio si existe en el JSON
-                )
+                if all(key in tanque for key in ['id', 'capacidad', 'nivel_actual']):
+                    self.agregar_tanque(
+                        id_tanque=tanque['id'],
+                        capacidad=tanque['capacidad'],
+                        nivel_actual=tanque['nivel_actual'],
+                        barrio=tanque.get('barrio', None)
+                    )
+                else:
+                    print(f"Tanque con datos incompletos: {tanque}")
             # Cargar conexiones
             for conexion in data.get('conexiones', []):
-                self.agregar_conexion(
-                    origen=conexion['origen'],
-                    destino=conexion['destino'],
-                    capacidad=conexion['capacidad'],
-                    color=conexion.get('color', 'blue')
-                )
+                origen = conexion.get('origen')
+                destino = conexion.get('destino')
+                if origen in self.casa or origen in self.tanques:
+                    if destino in self.casa or destino in self.tanques:
+                        self.agregar_conexion(
+                            origen=origen,
+                            destino=destino,
+                            capacidad=conexion['capacidad'],
+                            color=conexion.get('color', 'blue')
+                        )
+                    else:
+                        print(f"Destino inválido para la conexión: {conexion}")
+                else:
+                    print(f"Origen inválido para la conexión: {conexion}")
+            print("Casas cargadas:", list(self.casa.keys()))
+            print("Tanques cargados:", list(self.tanques.keys()))
             print("Red cargada con éxito.")
-            self.verificar_consistencia()  # Verifica integridad de la red
+            self.verificar_consistencia()
         except FileNotFoundError:
             print(f"El archivo '{archivo_json}' no se encuentra.")
         except json.JSONDecodeError as e:
@@ -69,6 +86,7 @@ class RedDeAcueducto:
         except Exception as e:
             print(f"Error al cargar el archivo JSON: {e}")
 
+    #GUARDAR JSON:
     def guardar_a_json(self, archivo_json):
         """
         Guarda la red en un archivo JSON.
@@ -274,13 +292,11 @@ class RedDeAcueducto:
                 pos[nodo] = (x + offset_x, y + offset_y)
             offset_x += spacing
             offset_y += spacing
-
         edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
         edge_labels = {
             (u, v): f"{data['capacity']:.1f}"
             for u, v, data in G.edges(data=True)
         }
-
         node_labels = {}
         node_colors = []
         node_edge_colors = []
@@ -510,6 +526,20 @@ class RedDeAcueducto:
         # Agregar la conexión si pasa las validaciones
         self.conexiones.append(Conexion(origen=origen, destino=destino, capacidad=capacidad, color=color))
         print(f"Conexión agregada: origen={origen}, destino={destino}, capacidad={capacidad}, color={color}")
+
+    #ELIMINAR CONEXIÓN:
+    def eliminar_conexion(self, origen, destino):
+        # Buscar la conexión y eliminarla
+        conexion_a_eliminar = None
+        for conexion in self.conexiones:
+            if conexion.origen == origen and conexion.destino == destino:
+                conexion_a_eliminar = conexion
+                break
+        
+        if conexion_a_eliminar:
+            self.conexiones.remove(conexion_a_eliminar)
+        else:
+            raise ValueError(f"La conexión entre {origen} y {destino} no existe en la red.")
 
     #SIMULAR OBSTRUCCIÓN
     def simular_obstruccion(self, origen=None, destino=None, nivel_gravedad=None):

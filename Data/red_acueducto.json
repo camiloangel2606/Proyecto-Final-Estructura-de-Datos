@@ -7,7 +7,7 @@
     "casas": [
         {
             "nombre": "Casa1",
-            "demanda": 0,
+            "demanda": 20,
             "barrio": "F\u00c3\u00a1tima"
         },
         {
@@ -23,6 +23,11 @@
         {
             "nombre": "Casa4",
             "demanda": 0,
+            "barrio": "F\u00c3\u00a1tima"
+        },
+        {
+            "nombre": "Casa5",
+            "demanda": 30,
             "barrio": "F\u00c3\u00a1tima"
         }
     ],
@@ -48,12 +53,6 @@
     ],
     "conexiones": [
         {
-            "origen": "Tanque1",
-            "destino": "Casa1",
-            "capacidad": 20,
-            "color": "red"
-        },
-        {
             "origen": "Tanque2",
             "destino": "Casa2",
             "capacidad": 15,
@@ -66,15 +65,27 @@
             "color": "blue"
         },
         {
-            "origen": "Casa1",
-            "destino": "Casa4",
-            "capacidad": 10,
-            "color": "blue"
-        },
-        {
             "origen": "Tanque2",
             "destino": "Casa3",
             "capacidad": 50,
+            "color": "blue"
+        },
+        {
+            "origen": "Tanque1",
+            "destino": "Casa2",
+            "capacidad": 20,
+            "color": "blue"
+        },
+        {
+            "origen": "Tanque3",
+            "destino": "Casa5",
+            "capacidad": 30,
+            "color": "blue"
+        },
+        {
+            "origen": "Tanque1",
+            "destino": "Casa1",
+            "capacidad": 20,
             "color": "blue"
         }
     ]

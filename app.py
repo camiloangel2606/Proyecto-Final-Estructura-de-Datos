@@ -28,37 +28,16 @@ except Exception as e:
 # Título de la aplicación
 st.title("Sistema de Gestión de Red de Acueductos")
 
-# Visualizar la red
-st.header("Visualización de la Red")
-try:
-    fig, ax = plt.subplots()
-    G = red.construir_grafo()
-    pos = nx.spring_layout(G)
-    nx.draw(
-        G,
-        pos,
-        with_labels=True,
-        node_size=500,
-        node_color="lightblue",
-        edge_color="gray",
-        font_size=10,
-        font_color="black",
-        ax=ax
-    )
-    st.pyplot(fig)
-except Exception as e:
-    st.error(f"Error al visualizar la red: {e}")
-
-# Título de la aplicación
-st.title("Sistema de Gestión de Red de Acueductos")
-
 # Barra lateral con opciones
 opcion = st.sidebar.radio(
     "Selecciona una operación",
-    ["Visualizar Red", "Agregar Casa", "Agregar Tanque", "Agregar Conexión", "Eliminar Casa", "Eliminar Tanque", "Eliminar Conexión"]
+    ["Visualizar Red", "Agregar Casa", "Agregar Tanque", "Agregar Conexión",
+    "Eliminar Casa", "Eliminar Tanque", "Eliminar Conexión", "Simular Obstrucción",
+    "Encontrar Rutas Alternativas", "Actualizar Valores", "Cambiar Sentido de Flujo",
+    "Identificar Posiciones Óptimas"]
 )
 
-# Función para visualizar la red
+#VISUALIZAR RED:
 if opcion == "Visualizar Red":
     st.header("Visualización de la Red")
     try:
@@ -67,19 +46,24 @@ if opcion == "Visualizar Red":
     except Exception as e:
         st.error(f"Error al visualizar la red: {e}")
 
-if opcion == "Agregar Casa":
+#AGREGAR CASA:
+elif opcion == "Agregar Casa":
     st.subheader("Agregar Casa")
     nombre = st.text_input("Nombre de la Casa")
     demanda = st.number_input("Demanda", min_value=1, step=1)
     barrio = st.selectbox("Barrio", list(red.barrios_permitidos.keys()))
     if st.button("Agregar Casa"):
         try:
-            red.agregar_casa(nombre, demanda, barrio)
-            red.guardar_a_json(archivo_json)
-            st.success("Casa agregada exitosamente.")
+            if nombre in red.casa:
+                st.error(f"Error: La casa '{nombre}' ya existe en la red.")
+            else:
+                red.agregar_casa(nombre, demanda, barrio)
+                red.guardar_a_json(archivo_json)
+                st.success("Casa agregada exitosamente.")
         except Exception as e:
             st.error(f"Error al agregar la casa: {e}")
 
+#AGREGAR TANQUE:
 elif opcion == "Agregar Tanque":
     st.subheader("Agregar Tanque")
     id_tanque = st.text_input("ID del Tanque")
@@ -88,68 +72,248 @@ elif opcion == "Agregar Tanque":
     barrio = st.selectbox("Barrio", list(red.barrios_permitidos.keys()))
     if st.button("Agregar Tanque"):
         try:
-            red.agregar_tanque(id_tanque, capacidad, nivel_actual, barrio)
-            red.guardar_a_json(archivo_json)
-            st.success("Tanque agregado exitosamente.")
+            if id_tanque in red.tanques:
+                st.error(f"Error: El tanque '{id_tanque}' ya existe en la red.")
+            else:
+                red.agregar_tanque(id_tanque, capacidad, nivel_actual, barrio)
+                red.guardar_a_json(archivo_json)
+                st.success("Tanque agregado exitosamente.")
         except Exception as e:
             st.error(f"Error al agregar el tanque: {e}")
 
+#AGREGAR CONEXIÓN:
 elif opcion == "Agregar Conexión":
     st.subheader("Agregar Conexión")
-    origen = st.text_input("Casa/Tanque Origen")
-    destino = st.text_input("Casa/Tanque Destino")
-    tipo_conexion = st.selectbox("Tipo de Conexión", ["Casa a Casa", "Casa a Tanque", "Tanque a Casa", "Tanque a Tanque"])
-    
-    if st.button("Agregar Conexión"):
-        try:
-            if tipo_conexion == "Casa a Casa":
-                red.agregar_conexion(origen, destino)
-            elif tipo_conexion == "Casa a Tanque":
-                red.agregar_conexion_casa_tanque(origen, destino)
-            elif tipo_conexion == "Tanque a Casa":
-                red.agregar_conexion_tanque_casa(origen, destino)
-            elif tipo_conexion == "Tanque a Tanque":
-                red.agregar_conexion_tanque_tanque(origen, destino)
-            red.guardar_a_json(archivo_json)
-            st.success("Conexión agregada exitosamente.")
-        except Exception as e:
-            st.error(f"Error al agregar la conexión: {e}")
+    try:
+        red.cargar_desde_json('data/red_acueducto.json')
+        # Solicitar datos
+        origen = st.text_input("Ingresa el nodo de origen (Tanque o Casa):").strip()
+        destino = st.text_input(
+            "Ingresa el nodo de destino (Casa o Tanque). Tenga en cuenta que:\n"
+            "Para Casa: Casa a Casa,\nPara Tanque: Tanque a Casa, Tanque a Tanque."
+        ).strip()
+        capacidad = st.number_input("Ingresa la capacidad de la conexión:", min_value=1, step=1)
+        if st.button("Agregar Conexión"):
+            if not origen or not destino:
+                st.error("Error: El origen y el destino no pueden estar vacíos.")
+            elif origen not in red.nodos or destino not in red.nodos:
+                st.error("Error: Uno o ambos nodos no existen en la red.")
+            else:
+                try:
+                    # Intentar agregar la conexión
+                    red.agregar_conexion(origen, destino, capacidad)
+                    # Guardar la red
+                    red.guardar_a_json('data/red_acueducto.json')
+                    st.success(f"Conexión agregada exitosamente entre {origen} y {destino} con capacidad {capacidad}.")
+                    # Visualizar la red
+                    red.visualizar_red()
+                except Exception as e:
+                    st.error(f"Error al agregar la conexión: {e}")
+    except Exception as e:
+        st.error(f"Error inesperado: {e}")
 
+# ELIMINAR CASA:
 elif opcion == "Eliminar Casa":
     st.subheader("Eliminar Casa")
     nombre_casa = st.text_input("Nombre de la Casa a eliminar")
     if st.button("Eliminar Casa"):
         try:
-            red.eliminar_casa(nombre_casa)
-            red.guardar_a_json(archivo_json)
-            st.success("Casa eliminada exitosamente.")
+            if nombre_casa not in red.nodos:
+                st.error(f"La casa con el identificador {nombre_casa} no existe en la red.")
+            else:
+                red.eliminar_casa(nombre_casa)
+                red.guardar_a_json(archivo_json)
+                st.success("Casa eliminada exitosamente.")
         except Exception as e:
             st.error(f"Error al eliminar la casa: {e}")
 
+# ELIMINAR TANQUE:
 elif opcion == "Eliminar Tanque":
     st.subheader("Eliminar Tanque")
     id_tanque = st.text_input("ID del Tanque a eliminar")
     if st.button("Eliminar Tanque"):
         try:
-            red.eliminar_tanque(id_tanque)
-            red.guardar_a_json(archivo_json)
-            st.success("Tanque eliminado exitosamente.")
+            if id_tanque not in red.nodos:
+                st.error(f"El tanque con el identificador {id_tanque} no existe en la red.")
+            else:
+                red.eliminar_tanque(id_tanque)
+                red.guardar_a_json(archivo_json)
+                st.success("Tanque eliminado exitosamente.")
         except Exception as e:
             st.error(f"Error al eliminar el tanque: {e}")
 
+# ELIMINAR CONEXIÓN:
 elif opcion == "Eliminar Conexión":
     st.subheader("Eliminar Conexión")
     origen = st.text_input("Casa/Tanque Origen")
     destino = st.text_input("Casa/Tanque Destino")
     if st.button("Eliminar Conexión"):
         try:
-            red.eliminar_conexion(origen, destino)
-            red.guardar_a_json(archivo_json)
-            st.success("Conexión eliminada exitosamente.")
+            # Verificar si la conexión existe
+            if not any(conexion.origen == origen and conexion.destino == destino for conexion in red.conexiones):
+                st.error(f"La conexión entre {origen} y {destino} no existe en la red.")
+            else:
+                red.eliminar_conexion(origen, destino)
+                red.guardar_a_json(archivo_json)
+                st.success("Conexión eliminada exitosamente.")
         except Exception as e:
             st.error(f"Error al eliminar la conexión: {e}")
 
-# Guardar cambios
+#SIMULAR OBSTRUCCIÓN:
+elif opcion == "Simular Obstrucción":
+    st.subheader("Simular Obstrucción")
+    try:
+        # Llamar a la función de simular obstrucción
+        red.simular_obstruccion()
+        red.guardar_a_json('data/red_acueducto.json')
+        red.cargar_desde_json('data/red_acueducto.json')
+        red.visualizar_red()  # Mostrar la red después de la simulación
+        st.success("Obstrucción simulada correctamente.")
+    except Exception as e:
+        st.error(f"Error al simular la obstrucción: {e}")
+
+# ENCONTRAR RUTAS ALTERNATIVAS:
+elif opcion == "Encontrar Rutas Alternativas":
+    st.subheader("Encontrar Rutas Alternativas")
+    try:
+        # Solicitar casas afectadas
+        casas_afectadas_input = st.text_input(
+            "Ingresa las casas afectadas por obstrucciones (separadas por comas):"
+        ).strip()
+        # Procesar solo si hay entrada
+        if casas_afectadas_input:
+            casas_afectadas = casas_afectadas_input.split(',')
+            casas_afectadas = [casa.strip() for casa in casas_afectadas if casa.strip()]
+            if not casas_afectadas:
+                st.error("No se ingresaron casas afectadas.")
+            else:
+                # Solicitar obstrucciones
+                obstrucciones_input = st.text_input(
+                    "Ingresa una obstrucción en formato 'origen,destino' (deja vacío para terminar):"
+                ).strip()
+                obstrucciones = []
+                while obstrucciones_input:
+                    try:
+                        origen, destino = obstrucciones_input.split(',')
+                        origen, destino = origen.strip(), destino.strip()
+                        if origen and destino:
+                            obstrucciones.append((origen, destino))
+                        else:
+                            st.error("Ambos nodos, origen y destino, deben ser válidos.")
+                        obstrucciones_input = st.text_input(
+                            "Ingresa otra obstrucción o deja vacío para terminar:"
+                        ).strip()
+                    except ValueError:
+                        st.error("Formato inválido. Usa 'origen,destino'.")
+                        break
+                if obstrucciones:
+                    # Aplicar obstrucciones en el grafo
+                    red.aplicar_obstrucciones(obstrucciones)
+                    # Calcular y visualizar rutas alternativas
+                    red.calcular_y_visualizar_rutas(casas_afectadas)
+                    st.success("Rutas alternativas calculadas y visualizadas correctamente.")
+                else:
+                    st.error("No se ingresaron obstrucciones.")
+    except Exception as e:
+        st.error(f"Error al encontrar rutas alternativas: {e}")
+
+# ACTUALIZAR VALORES:
+elif opcion == "Actualizar Valores":
+    st.subheader("Actualizar Valores")
+    try:
+        # Solicitar tipo y identificador
+        tipo = st.selectbox("Selecciona el tipo de actualización", ["Casa", "Tanque", "Conexión"])
+        identificador = st.text_input(f"Ingresa el identificador del {tipo} que deseas actualizar:").strip()
+        nuevos_valores_raw = st.text_input(
+            f"Ingresa los nuevos valores para el {tipo} (por ejemplo: clave1=valor1,clave2=valor2):"
+        ).strip()
+        # Verificar si se presionó el botón "Actualizar"
+        if st.button("Actualizar"):
+            if not identificador:
+                st.error(f"Por favor, ingresa un identificador válido para el {tipo}.")
+            elif not nuevos_valores_raw:
+                st.error("Por favor, ingresa los nuevos valores para la actualización.")
+            else:
+                # Verificación de existencia de nodo o conexión
+                if tipo == "Casa" and identificador not in red.nodos:
+                    st.error(f"La casa con el identificador {identificador} no existe en la red.")
+                elif tipo == "Tanque" and identificador not in red.nodos:
+                    st.error(f"El tanque con el identificador {identificador} no existe en la red.")
+                elif tipo == "Conexión" and not any(conexion.origen == identificador or conexion.destino == identificador for conexion in red.conexiones):
+                    st.error(f"La conexión con el identificador {identificador} no existe en la red.")
+                else:
+                    nuevos_valores = {}
+                    try:
+                        for item in nuevos_valores_raw.split(","):
+                            clave, valor = item.split("=")
+                            clave, valor = clave.strip(), valor.strip()
+                            # Convertir valores numéricos si es necesario
+                            if valor.isdigit():
+                                valor = int(valor)
+                            elif valor.replace('.', '', 1).isdigit():
+                                valor = float(valor)
+                            nuevos_valores[clave] = valor
+                    except ValueError as e:
+                        st.error(f"Error en el formato de entrada: {e}. Revisa tu formato de clave=valor.")
+                    if nuevos_valores:
+                        # Intentar actualizar los valores en la red
+                        if red.actualizar_valores(tipo, identificador, **nuevos_valores):
+                            red.guardar_a_json('data/red_acueducto.json')
+                            st.success("Cambios guardados correctamente.")
+                        else:
+                            st.error("No se pudo realizar la actualización. Verifica el identificador y los valores.")
+    except Exception as e:
+        st.error(f"Error al actualizar valores: {e}")
+
+# CAMBIAR SENTIDO DE FLUJO:
+elif opcion == "Cambiar Sentido de Flujo":
+    st.subheader("Cambiar Sentido de Flujo")
+    try:
+        # Solicitar origen, destino y capacidad
+        origen = st.text_input("Ingresa el nodo origen al que cambiar el flujo:")
+        destino = st.text_input("Ingresa el nodo destino al que cambiar el flujo:")
+        capacidad = st.number_input("Ingresa la capacidad que deseas revertir:", min_value=0.0, step=1.0)
+
+        # Solo validar cuando todos los campos están llenos
+        if origen and destino and capacidad > 0:
+            if origen not in red.nodos or destino not in red.nodos:
+                st.error("Error: Uno o ambos nodos no existen en la red.")
+            else:
+                # Intentar cambiar el sentido del flujo
+                resultado = red.cambiar_sentido_flujo(origen, destino, capacidad)
+                if "Error" not in resultado:
+                    red.recalcular_flujo()
+                    red.guardar_a_json('data/red_acueducto.json')
+                    st.success("Los cambios en la red han sido guardados exitosamente.")
+                else:
+                    st.error(f"Error al cambiar el sentido del flujo: {resultado}")
+        else:
+            st.error("Debes proporcionar todos los datos correctamente.")
+    except Exception as e:
+        st.error(f"Ha ocurrido un error al cambiar el sentido del flujo: {e}")
+
+
+# IDENTIFICAR POSICIONES ÓPTIMAS PARA TANQUES:
+elif opcion == "Identificar Posiciones Óptimas":
+    st.subheader("Identificar Posiciones Óptimas para Tanques")
+    try:
+        umbral_demanda = st.number_input("Ingresa el umbral de demanda mínima por barrio (ej. 50):", min_value=0.0)
+
+        if umbral_demanda > 0:
+            # Identificar posiciones óptimas
+            posiciones = red.identificar_posiciones_optimas_interactivo()
+            if posiciones:
+                st.write("Posiciones óptimas para nuevos tanques:")
+                for pos in posiciones:
+                    st.write(f"Barrio: {pos['barrio']}, Posición central: {pos['posicion_central']}, Demanda: {pos['demanda']}")
+            else:
+                st.error("No se encontraron posiciones óptimas con los parámetros proporcionados.")
+        else:
+            st.error("El umbral de demanda debe ser un valor positivo.")
+    except Exception as e:
+        st.error(f"Error al identificar posiciones óptimas: {e}")
+
+# GUARDAR CAMBIOS
 if st.sidebar.button("Guardar Cambios"):
     try:
         red.guardar_a_json(archivo_json)
