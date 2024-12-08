@@ -302,7 +302,7 @@ elif opcion == "Cambiar Sentido de Flujo":
         destino = st.text_input("Ingresa el nodo destino al que cambiar el flujo:")
         capacidad = st.number_input("Ingresa la capacidad que deseas revertir:", min_value=0.0, step=1.0)
 
-        # Solo validar cuando todos los campos están llenos
+        # Validar solo cuando se han ingresado todos los datos
         if origen and destino and capacidad > 0:
             if origen not in red.nodos or destino not in red.nodos:
                 st.error("Error: Uno o ambos nodos no existen en la red.")
@@ -315,11 +315,10 @@ elif opcion == "Cambiar Sentido de Flujo":
                     st.success("Los cambios en la red han sido guardados exitosamente.")
                 else:
                     st.error(f"Error al cambiar el sentido del flujo: {resultado}")
-        else:
-            st.error("Debes proporcionar todos los datos correctamente.")
+        elif origen or destino or capacidad > 0:
+            st.warning("Debes proporcionar todos los datos correctamente.")
     except Exception as e:
         st.error(f"Ha ocurrido un error al cambiar el sentido del flujo: {e}")
-
 
 # IDENTIFICAR POSICIONES ÓPTIMAS PARA TANQUES:
 elif opcion == "Identificar Posiciones Óptimas":

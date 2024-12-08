@@ -7,7 +7,7 @@
     "casas": [
         {
             "nombre": "Casa1",
-            "demanda": 20,
+            "demanda": 0,
             "barrio": "F\u00c3\u00a1tima"
         },
         {
@@ -24,16 +24,6 @@
             "nombre": "Casa4",
             "demanda": 0,
             "barrio": "F\u00c3\u00a1tima"
-        },
-        {
-            "nombre": "Casa5",
-            "demanda": 30,
-            "barrio": "F\u00c3\u00a1tima"
-        },
-        {
-            "nombre": "Casa6",
-            "demanda": 30,
-            "barrio": "Palermo"
         }
     ],
     "tanques": [
@@ -58,9 +48,15 @@
     ],
     "conexiones": [
         {
+            "origen": "Tanque1",
+            "destino": "Casa1",
+            "capacidad": 20,
+            "color": "red"
+        },
+        {
             "origen": "Tanque2",
             "destino": "Casa2",
-            "capacidad": 60,
+            "capacidad": 15,
             "color": "yellow"
         },
         {
@@ -72,37 +68,19 @@
         {
             "origen": "Tanque2",
             "destino": "Casa3",
-            "capacidad": 4.999999999999999,
-            "color": "red"
+            "capacidad": 50,
+            "color": "blue"
         },
         {
             "origen": "Tanque1",
             "destino": "Casa2",
-            "capacidad": 14.3568,
-            "color": "yellow"
-        },
-        {
-            "origen": "Tanque3",
-            "destino": "Casa5",
-            "capacidad": 30,
-            "color": "blue"
-        },
-        {
-            "origen": "Tanque1",
-            "destino": "Casa1",
             "capacidad": 20,
             "color": "blue"
         },
         {
-            "origen": "Tanque2",
-            "destino": "Casa6",
-            "capacidad": 30,
-            "color": "blue"
-        },
-        {
-            "origen": "Casa2",
-            "destino": "Casa3",
-            "capacidad": 50,
+            "origen": "Casa4",
+            "destino": "Casa1",
+            "capacidad": 10.0,
             "color": "blue"
         }
     ]
