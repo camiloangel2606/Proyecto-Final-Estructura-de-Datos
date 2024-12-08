@@ -793,3 +793,76 @@ class RedDeAcueducto:
                 tanque = self.tanques[nodo]
                 tanque.nivel_actual = max(0, tanque.nivel_actual - flujo_total)  # Actualizamos el nivel del tanque
                 print(f"Tanque {nodo} tiene un nivel actual de {tanque.nivel_actual} litros.")
+    
+
+    #IDENTIFICAR POSICIONES OPTIMAS:
+    def identificar_posiciones_optimas(self, casas, tanques, conexiones, barrios_permitidos, umbral_demanda=50):
+        """
+        Identifica posiciones óptimas para nuevos tanques en áreas sin cobertura.
+        Args:
+            casas (list): Lista de casas con su información.
+            tanques (list): Lista de tanques con su información.
+            conexiones (list): Lista de conexiones existentes.
+            barrios_permitidos (dict): Barrios y sus colores (identificación).
+            umbral_demanda (float): Umbral mínimo de demanda en un barrio para considerar un nuevo tanque.
+
+        Returns:
+            list: Posiciones sugeridas para nuevos tanques.
+        """
+        # Crear un grafo de la red
+        G = nx.Graph()
+
+        # Agregar casas y tanques como nodos
+        for casa in casas:
+            G.add_node(casa["nombre"], tipo="casa", barrio=casa["barrio"], demanda=casa["demanda"])
+        for tanque in tanques:
+            G.add_node(tanque["id"], tipo="tanque", barrio=tanque["barrio"], capacidad=tanque["capacidad"])
+
+        # Agregar conexiones como aristas
+        for conexion in conexiones:
+            G.add_edge(conexion["origen"], conexion["destino"], capacidad=conexion["capacidad"])
+
+        # Identificar nodos sin servicio o con déficit hídrico
+        nodos_sin_servicio = []
+        for casa in casas:
+            casa_nombre = casa["nombre"]
+            suministro_total = sum(
+                G.edges[edge]["capacidad"] for edge in G.edges(casa_nombre) if "capacidad" in G.edges[edge]
+            )
+            if suministro_total < casa["demanda"]:
+                nodos_sin_servicio.append(casa_nombre)
+
+        # Evaluar barrios por su demanda total
+        demanda_por_barrio = {}
+        for casa in casas:
+            barrio = casa["barrio"]
+            if barrio not in demanda_por_barrio:
+                demanda_por_barrio[barrio] = 0
+            demanda_por_barrio[barrio] += casa["demanda"]
+
+        # Filtrar barrios prioritarios
+        barrios_prioritarios = [
+            barrio
+            for barrio, demanda in demanda_por_barrio.items()
+            if demanda >= umbral_demanda and barrio in barrios_permitidos
+        ]
+
+        # Sugerir posiciones óptimas para nuevos tanques
+        posiciones_sugeridas = []
+        for barrio in barrios_prioritarios:
+            # Nodos en el barrio con déficit hídrico
+            nodos_barrio = [n for n in nodos_sin_servicio if G.nodes[n]["barrio"] == barrio]
+
+            if nodos_barrio:
+                # Buscar punto más conectado en el barrio
+                punto_optimo = max(nodos_barrio, key=lambda n: len(list(G.neighbors(n))))
+                posiciones_sugeridas.append(
+                    {
+                        "barrio": barrio,
+                        "posicion_central": punto_optimo,
+                        "demanda": demanda_por_barrio[barrio],
+                        "color": barrios_permitidos[barrio],
+                    }
+                )
+
+        return posiciones_sugeridas

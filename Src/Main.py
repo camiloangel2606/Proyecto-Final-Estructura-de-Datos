@@ -38,6 +38,7 @@ def menu():
         8: calcular_y_visualizar,
         9: actualizar_valores,
         10: cambiar_sentido_flujo,
+        11: identificar_posiciones_optimas_interactivo,
     }
     
     while i != 0:
@@ -46,7 +47,7 @@ def menu():
         print("Agregar: (1) Casa, (2) Tanque, (3) Conexión. Al acueducto")
         print("Eliminar: (4) Casa, (5) Tanque, (6) Conexión. Al acueducto")
         print("(7) Simular_obstrucción, (8) Encontrar rutas alternativas,(9) Actualizar valores (Casa, Tanque, Conexión).")
-        print("(10) Cambiar dirección de flujo")
+        print("(10) Cambiar dirección de flujo, (11) Identificar posiciones optimas.")
         print("(0) Salir del menú")
         
         #Validar la entrada del usuario
@@ -456,6 +457,42 @@ def cambiar_sentido_flujo():
             print("No se realizaron cambios en la red debido a un error.")
     except Exception as e:
         print(f"Ha ocurrido un error al cambiar el sentido del flujo: {e}")
+
+#  IDENTIFICAR POSICIONES OPTIMAS PARA TANQUES:
+def identificar_posiciones_optimas_interactivo():
+    archivo_json = 'data/red_acueducto.json'
+    try:
+        # Cargar los datos desde el archivo JSON
+        with open(archivo_json, 'r') as f:
+            datos = json.load(f)
+        
+        casas = datos.get("casas", [])
+        tanques = datos.get("tanques", [])
+        conexiones = datos.get("conexiones", [])
+        barrios_permitidos = datos.get("barrios_permitidos", {})
+        
+        # Solicitar parámetro al usuario
+        umbral_demanda = float(input("Ingresa el umbral de demanda mínima por barrio (ej. 50): "))
+        
+        # Identificar posiciones óptimas
+        posiciones = red.identificar_posiciones_optimas(
+            casas, tanques, conexiones, barrios_permitidos, umbral_demanda
+        )
+        
+        # Mostrar las posiciones sugeridas
+        if posiciones:
+            print("Posiciones óptimas para nuevos tanques:")
+            for pos in posiciones:
+                print(f"Barrio: {pos['barrio']}, Posición central: {pos['posicion_central']}, Demanda: {pos['demanda']}")
+        else:
+            print("No se encontraron posiciones óptimas con los parámetros proporcionados.")
+    
+    except FileNotFoundError:
+        print(f"Error: No se encontró el archivo {archivo_json}. Asegúrate de que exista y esté en la ubicación correcta.")
+    except json.JSONDecodeError:
+        print(f"Error: El archivo {archivo_json} contiene un formato inválido.")
+    except Exception as e:
+        print(f"Ha ocurrido un error al identificar posiciones óptimas: {e}")
 
 if __name__ == "__main__":
     #main()
