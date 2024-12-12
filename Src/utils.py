@@ -131,7 +131,7 @@ class RedDeAcueducto:
             print(f"Error al guardar el archivo JSON: {e}")
 
     #REGISTRAR HISTORIAL:
-    def registrar_historial(cambio):
+    def registrar_historial(self, cambio):
         historial_path = 'data/historial.json'
         
         # Verificar si el archivo existe, si no, crearlo
