@@ -4,7 +4,6 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 
-# Asegúrate de que la ruta de la carpeta Src esté incluida
 sys.path.append(os.path.join(os.path.dirname(__file__), 'Src'))
 
 from Src.utils import RedDeAcueducto
@@ -32,10 +31,10 @@ st.title("Sistema de Gestión de Red de Acueductos")
 opcion = st.sidebar.radio(
     "Selecciona una operación",
     [
-        "Agregar Barrio", "Eliminar Barrio","Visualizar Red", "Agregar Casa", "Agregar Tanque", "Agregar Conexión",
+        "Visualizar Red", "Agregar Barrio", "Eliminar Barrio", "Agregar Casa", "Agregar Tanque", "Agregar Conexión",
         "Eliminar Casa", "Eliminar Tanque", "Eliminar Conexión", "Simular Obstrucción",
         "Encontrar Rutas Alternativas", "Actualizar Valores", "Cambiar Sentido de Flujo",
-        "Identificar Posiciones Óptimas"
+        "Identificar Posiciones Óptimas", "Visualizar Historial"
     ]
 )
 
@@ -58,6 +57,9 @@ elif opcion == "Agregar Barrio":
             red.agregar_barrio(barrio, color)
             st.write("Barrios después de agregar:", red.barrios_permitidos)  # Debugging
             red.guardar_a_json(archivo_json)
+            
+            # Registrar el cambio en el historial
+            red.registrar_historial(f"Se agregó el barrio: {barrio} con color {color}.")
             st.success(f"Barrio '{barrio}' agregado exitosamente con el color '{color}'.")
         except Exception as e:
             st.error(f"Error al agregar el barrio: {e}")
@@ -72,6 +74,9 @@ elif opcion == "Eliminar Barrio":
             try:
                 red.eliminar_barrio(barrio)
                 red.guardar_a_json(archivo_json)
+                
+                # Registrar el cambio en el historial
+                red.registrar_historial(f"Se elimino el barrio: {barrio}.")
                 st.success(f"Barrio '{barrio}' eliminado exitosamente.")
             except Exception as e:
                 st.error(f"Error al eliminar el barrio: {e}")
@@ -93,6 +98,9 @@ elif opcion == "Agregar Casa":
                 else:
                     red.agregar_casa(nombre, demanda, barrio)
                     red.guardar_a_json(archivo_json)
+                    
+                    # Registrar el cambio en el historial
+                    red.registrar_historial(f"Se agregó la casa: {nombre} en el barrio: {barrio}, con demanda: {demanda}.")
                     st.success("Casa agregada exitosamente.")
             except Exception as e:
                 st.error(f"Error al agregar la casa: {e}")
@@ -113,6 +121,9 @@ elif opcion == "Agregar Tanque":
             else:
                 red.agregar_tanque(id_tanque, capacidad, nivel_actual, barrio)
                 red.guardar_a_json(archivo_json)
+                
+                # Registrar el cambio en el historial
+                red.registrar_historial(f"Se agregó el tanque: {id_tanque} en el barrio: {barrio}, con demanda: {capacidad}.")
                 st.success("Tanque agregado exitosamente.")
         except Exception as e:
             st.error(f"Error al agregar el tanque: {e}")
@@ -129,7 +140,6 @@ elif opcion == "Agregar Conexión":
             "Para Casa: Casa a Casa,\nPara Tanque: Tanque a Casa, Tanque a Tanque."
         ).strip()
         capacidad = st.number_input("Ingresa la capacidad de la conexión:", min_value=1, step=1)
-
         if st.button("Agregar Conexión"):
             if not origen or not destino:
                 st.error("Error: El origen y el destino no pueden estar vacíos.")
@@ -149,7 +159,6 @@ elif opcion == "Agregar Conexión":
                     )
                     demanda_total = red.casa[origen].demanda
                     capacidad_disponible = max(suministro_total - demanda_total, 0)
-
                 if capacidad > capacidad_disponible:
                     st.error(
                         f"Error: El nodo origen '{origen}' no tiene suficiente capacidad disponible. "
@@ -161,6 +170,9 @@ elif opcion == "Agregar Conexión":
                         red.agregar_conexion(origen, destino, capacidad)
                         # Guardar la red
                         red.guardar_a_json('data/red_acueducto.json')
+                        
+                        # Registrar el cambio en el historial
+                        red.registrar_historial(f"Se agregó la conexión: {origen} con destino: {destino} y capacidad de: {capacidad}.")
                         st.success(f"Conexión agregada exitosamente entre {origen} y {destino} con capacidad {capacidad}.")
                         # Visualizar la red
                         red.cargar_desde_json('data/red_acueducto.json')
@@ -181,6 +193,9 @@ elif opcion == "Eliminar Casa":
             else:
                 red.eliminar_casa(nombre_casa)
                 red.guardar_a_json(archivo_json)
+                
+                # Registrar el cambio en el historial
+                red.registrar_historial(f"Se eliminó la casa: {nombre_casa}.")
                 st.success("Casa eliminada exitosamente.")
         except Exception as e:
             st.error(f"Error al eliminar la casa: {e}")
@@ -196,6 +211,9 @@ elif opcion == "Eliminar Tanque":
             else:
                 red.eliminar_tanque(id_tanque)
                 red.guardar_a_json(archivo_json)
+                
+                # Registrar el cambio en el historial
+                red.registrar_historial(f"Se eliminó el tanque: {id_tanque}.")
                 st.success("Tanque eliminado exitosamente.")
         except Exception as e:
             st.error(f"Error al eliminar el tanque: {e}")
@@ -213,6 +231,9 @@ elif opcion == "Eliminar Conexión":
             else:
                 red.eliminar_conexion(origen, destino)
                 red.guardar_a_json(archivo_json)
+                
+                # Registrar el cambio en el historial
+                red.registrar_historial(f"Se eliminó la conexión con origen: {origen} con destino: {destino}.")
                 st.success("Conexión eliminada exitosamente.")
         except Exception as e:
             st.error(f"Error al eliminar la conexión: {e}")
@@ -226,7 +247,6 @@ elif opcion == "Simular Obstrucción":
         origen = st.text_input("Ingrese el nodo de origen de la conexión:")
         destino = st.text_input("Ingrese el nodo de destino de la conexión:")
         nivel_gravedad = st.number_input("Ingrese el nivel de gravedad (0 a 100):", min_value=0.0, max_value=100.0, value=0.0)
-
         # Solo ejecutar la simulación si el botón es presionado
         if st.button("Simular Obstrucción"):
             if not origen or not destino:
@@ -237,6 +257,9 @@ elif opcion == "Simular Obstrucción":
                 # Llamar a la función de simulación con los valores proporcionados
                 red.simular_obstruccion(origen, destino, nivel_gravedad / 100)  # Convertir a porcentaje
                 red.guardar_a_json('data/red_acueducto.json')
+                
+                # Registrar el cambio en el historial
+                red.registrar_historial(f"Se agregó la obstrucción con origen: {origen}, destino: {destino} y nivel de gravedad: {nivel_gravedad}%.")
                 red.cargar_desde_json('data/red_acueducto.json')
                 red.visualizar_red()  # Mostrar la red después de la simulación
                 st.success("Obstrucción simulada correctamente.")
@@ -323,6 +346,9 @@ elif opcion == "Actualizar Valores":
                 # Intentar actualizar los valores en la red
                 if red.actualizar_valores(tipo, identificador, **nuevos_valores):
                     red.guardar_a_json('data/red_acueducto.json')
+                    
+                    # Registrar el cambio en el historial
+                    red.registrar_historial(f"Se actualizó el valor de: {identificador} con los valores: {nuevos_valores}.")
                     st.success("Cambios guardados correctamente.")
                 else:
                     st.error("No se pudo realizar la actualización. Verifica el identificador y los valores.")
@@ -337,7 +363,6 @@ elif opcion == "Cambiar Sentido de Flujo":
         origen = st.text_input("Ingresa el nodo origen al que cambiar el flujo:")
         destino = st.text_input("Ingresa el nodo destino al que cambiar el flujo:")
         capacidad = st.number_input("Ingresa la capacidad que deseas revertir:", min_value=0.0, step=1.0)
-
         # Validar solo cuando se han ingresado todos los datos
         if origen and destino and capacidad > 0:
             if origen not in red.nodos or destino not in red.nodos:
@@ -348,6 +373,9 @@ elif opcion == "Cambiar Sentido de Flujo":
                 if "Error" not in resultado:
                     red.recalcular_flujo()
                     red.guardar_a_json('data/red_acueducto.json')
+                    
+                    # Registrar el cambio en el historial
+                    red.registrar_historial(f"Se cambió el flujo con origen: {origen}, destino: {destino} y capacidad: {capacidad}.")
                     st.success("Los cambios en la red han sido guardados exitosamente.")
                 else:
                     st.error(f"Error al cambiar el sentido del flujo: {resultado}")
@@ -364,19 +392,16 @@ elif opcion == "Identificar Posiciones Óptimas":
         {"nombre": nombre, **vars(casa)}
         for nombre, casa in red.casa.items()
     ]
-
     # Transformar tanques
     red.tanques = [
         {"id": tanque_id, **vars(tanque)}
         for tanque_id, tanque in red.tanques.items()
     ]
-
     # Transformar conexiones
     red.conexiones = [
         {"origen": conexion.origen, "destino": conexion.destino, "capacidad": conexion.capacidad}
         for conexion in red.conexiones
     ]
-
     st.subheader("Identificar Posiciones Óptimas para Nuevos Tanques")
     if not isinstance(red.casa, list) or not all(isinstance(c, dict) for c in red.casa):
         st.error("El formato de 'casas' no es válido.")
@@ -394,7 +419,6 @@ elif opcion == "Identificar Posiciones Óptimas":
         st.error("El formato de 'barrios_permitidos' no es válido.")
         st.write("Barrios permitidos actuales:", red.barrios_permitidos)
         st.stop()
-
     try:
         umbral_demanda = st.number_input(
             "Ingresa el umbral mínimo de demanda para sugerir nuevos tanques:",
@@ -440,6 +464,22 @@ elif opcion == "Identificar Posiciones Óptimas":
                 st.warning("No se encontraron posiciones óptimas basadas en los parámetros actuales.")
     except Exception as e:
         st.error(f"Ha ocurrido un error al identificar posiciones óptimas: {e}")
+
+# VISUALIZAR HISTORIAL:
+elif opcion == "Visualizar Historial":
+    st.subheader("Visualizar Historial")
+    # Llamar a la función mostrar_historial
+    resultado = red.mostrar_historial()
+    
+    # Verificar si es un mensaje de error o el historial
+    if isinstance(resultado, str):  # Es un mensaje de error o advertencia
+        st.warning(resultado)
+    else:  # Es el historial como lista
+        if not resultado:
+            st.info("El historial está vacío.")
+        else:
+            st.success("Historial de cambios:")
+            st.text(resultado)  # Muestra el resultado en la interfaz
 
 # GUARDAR CAMBIOS
 if st.sidebar.button("Guardar Cambios"):

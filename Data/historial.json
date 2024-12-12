@@ -1,0 +1,39 @@
+[
+    {
+    "fecha": "2024-12-12T08:30:00",
+    "evento": "Conexión añadida",
+    "detalles": {
+        "casa": "Casa 1",
+        "accion": "Conectada al tanque 2"
+    }
+    },
+    {
+    "fecha": "2024-12-12T09:00:00",
+    "evento": "Flujo de agua modificado",
+    "detalles": {
+        "casa": "Casa 3",
+        "flujo_inicial": 0,
+        "flujo_final": 10,
+        "mensaje": "Se ha iniciado el flujo de agua hacia la Casa 3"
+    }
+    },
+    {
+    "fecha": "2024-12-12T10:15:00",
+    "evento": "Desconexión realizada",
+    "detalles": {
+        "casa": "Casa 2",
+        "accion": "Desconectada del tanque 1"
+    }
+    },
+    {
+    "fecha": "2024-12-12T11:00:00",
+    "evento": "Cambio en dirección de flujo",
+    "detalles": {
+        "origen": "Tanque 1",
+        "destino": "Casa 4",
+        "flujo_inicial": 5,
+        "flujo_final": 0,
+        "mensaje": "El flujo de agua ha sido detenido hacia Casa 4 y redirigido a otro tanque"
+    }
+    }
+]

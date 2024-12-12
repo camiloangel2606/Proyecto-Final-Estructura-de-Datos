@@ -1,5 +1,6 @@
 import json
 import heapq
+import os
 import networkx as nx
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -128,6 +129,27 @@ class RedDeAcueducto:
             print(f"Red guardada con éxito en {archivo_json}")
         except Exception as e:
             print(f"Error al guardar el archivo JSON: {e}")
+
+    #REGISTRAR HISTORIAL:
+    def registrar_historial(cambio):
+        historial_path = 'data/historial.json'
+        
+        # Verificar si el archivo existe, si no, crearlo
+        if not os.path.exists(historial_path):
+            with open(historial_path, 'w') as file:
+                json.dump([], file)  # Crear archivo vacío
+        
+        # Leer el historial actual
+        with open(historial_path, 'r') as file:
+            historial = json.load(file)
+        
+        # Agregar el nuevo cambio al historial
+        historial.append(cambio)
+        
+        # Guardar el historial actualizado
+        # Guardar el archivo JSON con codificación UTF-8
+        with open('data/historial.json', 'w', encoding='utf-8') as file:
+            json.dump(historial, file, ensure_ascii=False, indent=4)
 
     #DETECTAR NODOS NO CONECTADOS:
     def obtener_nodos_no_conectados(self):
@@ -370,6 +392,35 @@ class RedDeAcueducto:
         
         # Mostrar el gráfico en Streamlit
         st.pyplot(fig)
+
+    #MOSTRAR HISTORIAL:
+    def mostrar_historial(self):
+        """
+        Función para mostrar el contenido del archivo historial.json.
+        """
+        historial_path = 'data/historial.json'
+        # Verificar si el archivo existe
+        if not os.path.exists(historial_path):
+            return "El archivo 'historial.json' no existe."
+        
+        try:
+            # Leer el contenido del archivo con codificación UTF-8
+            with open(historial_path, 'r', encoding='utf-8') as file:
+                contenido = file.read().strip()  # Leer el contenido y eliminar espacios en blanco
+                # Verificar si el archivo está vacío
+                if not contenido:
+                    return "El historial está vacío."
+                # Intentar cargar el contenido como JSON
+                historial = json.loads(contenido)
+                # Verificar si el historial es una lista válida
+                if not isinstance(historial, list):
+                    return "El contenido del historial no es una lista válida."
+                if not historial:
+                    return "El historial está vacío."
+                else:
+                    return "\n".join([f"{i + 1}. {entrada}" for i, entrada in enumerate(historial)])
+        except json.JSONDecodeError:
+            return "Error al leer el archivo 'historial.json'. Asegúrate de que el archivo tiene formato JSON válido."
 
     #AGREGAR BARRIO:
     def agregar_barrio(self, nombre, color):
