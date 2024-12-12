@@ -283,8 +283,10 @@ elif opcion == "Encontrar Rutas Alternativas":
     try:
         # Solicitar casas afectadas
         casas_afectadas_input = st.text_input(
-            "Ingresa las casas afectadas por obstrucciones (separadas por comas):"
+            "Ingresa las casas afectadas por obstrucciones (separadas por comas):",
+            key="casas_afectadas_input"
         ).strip()
+
         # Procesar solo si hay entrada
         if casas_afectadas_input:
             casas_afectadas = casas_afectadas_input.split(',')
@@ -292,31 +294,49 @@ elif opcion == "Encontrar Rutas Alternativas":
             if not casas_afectadas:
                 st.error("No se ingresaron casas afectadas.")
             else:
-                # Solicitar obstrucciones
-                obstrucciones_input = st.text_input(
-                    "Ingresa una obstrucción en formato 'origen,destino' (deja vacío para terminar):"
-                ).strip()
                 obstrucciones = []
-                while obstrucciones_input:
+                i = 0  # Contador para claves dinámicas
+
+                while True:
+                    # Generar clave única para cada input
+                    obstrucciones_input = st.text_input(
+                        f"Ingrese una obstrucción en formato 'origen,destino' (deja vacío para terminar):",
+                        key=f"obstruccion_input_{i}"
+                    ).strip()
+
+                    if not obstrucciones_input:
+                        break  # Finalizar si el usuario no ingresa más datos
+
                     try:
                         origen, destino = obstrucciones_input.split(',')
                         origen, destino = origen.strip(), destino.strip()
                         if origen and destino:
                             obstrucciones.append((origen, destino))
+                            i += 1  # Incrementar el contador para la siguiente clave
                         else:
                             st.error("Ambos nodos, origen y destino, deben ser válidos.")
-                        obstrucciones_input = st.text_input(
-                            "Ingresa otra obstrucción o deja vacío para terminar:"
-                        ).strip()
                     except ValueError:
                         st.error("Formato inválido. Usa 'origen,destino'.")
-                        break
+
                 if obstrucciones:
                     # Aplicar obstrucciones en el grafo
                     red.aplicar_obstrucciones(obstrucciones)
+
                     # Calcular y visualizar rutas alternativas
-                    red.calcular_y_visualizar_rutas(casas_afectadas)
-                    st.success("Rutas alternativas calculadas y visualizadas correctamente.")
+                    rutas = []
+                    for casa in casas_afectadas:
+                        for tanque in [n for n in red.nodos if "Tanque" in n]:
+                            ruta = red.encontrar_ruta_alternativa(tanque, casa)
+                            if ruta:
+                                rutas.append(ruta)
+                                st.write(f"Ruta alternativa para '{casa}': {ruta}")
+                                break
+
+                    if rutas:
+                        red.visualizar_rutas_alternativas(rutas)
+                        st.success("Rutas alternativas visualizadas correctamente.")
+                    else:
+                        st.error("No se encontraron rutas alternativas.")
                 else:
                     st.error("No se ingresaron obstrucciones.")
     except Exception as e:

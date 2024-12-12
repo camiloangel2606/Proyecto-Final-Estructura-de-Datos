@@ -637,14 +637,14 @@ class RedDeAcueducto:
     def visualizar_rutas_alternativas(self, rutas):
         """
         Visualiza las rutas alternativas en el grafo.
-        Parámetros:
-        - rutas: Lista de rutas alternativas (listas de nodos).
         """
         G = self.construir_grafo()
         pos = nx.spring_layout(G)
-        # Dibujar grafo base
-        edge_colors = [data['color'] for _, _, data in G.edges(data=True)]
+        
+        edge_colors = [data.get('color', 'black') for _, _, data in G.edges(data=True)]
         node_colors = ["lightblue" if "Casa" in node else "green" for node in G.nodes()]
+        
+        # Dibujar el grafo base
         nx.draw(
             G,
             pos,
@@ -653,16 +653,19 @@ class RedDeAcueducto:
             node_color=node_colors,
             node_size=500
         )
+        
         # Dibujar rutas alternativas
         for ruta in rutas:
-            ruta_aristas = [(ruta[i], ruta[i+1]) for i in range(len(ruta)-1)]
-            nx.draw_networkx_edges(
-                G,
-                pos,
-                edgelist=ruta_aristas,
-                edge_color="blue",
-                width=2
-            )
+            if len(ruta) > 1:
+                ruta_aristas = [(ruta[i], ruta[i + 1]) for i in range(len(ruta) - 1)]
+                nx.draw_networkx_edges(
+                    G,
+                    pos,
+                    edgelist=ruta_aristas,
+                    edge_color="blue",
+                    width=2
+                )
+        
         # Mostrar el grafo
         plt.title("Rutas Alternativas")
         plt.show()
@@ -680,6 +683,9 @@ class RedDeAcueducto:
         for casa in casas_afectadas:
             # Buscar ruta desde cualquier tanque al nodo afectado
             for tanque in [n for n in G.nodes() if "Tanque" in n]:
+                origen = casas_afectadas[0] if casas_afectadas else None
+                destino = casas_afectadas[1] if len(casas_afectadas) > 1 else None
+
                 ruta = self.encontrar_ruta_alternativa(origen=tanque, destino=casa)
                 if ruta:
                     # Imprimir la ruta encontrada solo para la primera casa afectada
@@ -705,7 +711,8 @@ class RedDeAcueducto:
             if G.has_edge(u, v):
                 G[u][v]['weight'] = float('inf')  # Bloquear la arista
                 G[u][v]['color'] = "red"  # Marcar como obstruida
-    
+
+    #ACTUALIZAR VALORES:
     def actualizar_valores(self, tipo, identificador, **nuevos_valores):
         """
         Actualiza los valores de una casa, tanque o conexión en la red.
