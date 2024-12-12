@@ -92,18 +92,29 @@ elif opcion == "Agregar Casa":
     if barrios:
         barrio = st.selectbox("Barrio", barrios)
         if st.button("Agregar Casa"):
-            try:
-                if nombre in red.casa:
-                    st.error(f"Error: La casa '{nombre}' ya existe en la red.")
-                else:
+            # Verificar si la casa ya existe antes de agregarla
+            if nombre in red.casa:  # Asumo que red.casas es el lugar donde almacenas las casas
+                st.error(f"Error: La casa '{nombre}' ya existe en la red.")
+            else:
+                try:
+                    # Intentar agregar la casa
                     red.agregar_casa(nombre, demanda, barrio)
                     red.guardar_a_json(archivo_json)
                     
                     # Registrar el cambio en el historial
-                    red.registrar_historial(f"Se agregó la casa: {nombre} en el barrio: {barrio}, con demanda: {demanda}.")
+                    cambio = {
+                        "fecha": "2024-12-12T11:30:00",  # Puedes obtener la fecha actual aquí
+                        "evento": "Casa agregada",
+                        "detalles": {
+                            "casa": nombre,
+                            "demanda": demanda,
+                            "barrio": barrio
+                        }
+                    }
+                    red.registrar_historial(cambio)  # Guardar en el historial
                     st.success("Casa agregada exitosamente.")
-            except Exception as e:
-                st.error(f"Error al agregar la casa: {e}")
+                except Exception as e:
+                    st.error(f"Error al agregar la casa: {e}")
     else:
         st.error("No hay barrios disponibles. Agrega uno primero.")
 

@@ -136,20 +136,22 @@ class RedDeAcueducto:
         
         # Verificar si el archivo existe, si no, crearlo
         if not os.path.exists(historial_path):
-            with open(historial_path, 'w') as file:
-                json.dump([], file)  # Crear archivo vacío
+            with open(historial_path, 'w', encoding='utf-8') as file:
+                json.dump([], file, ensure_ascii=False, indent=4)  # Crear archivo vacío si no existe
         
-        # Leer el historial actual
-        with open(historial_path, 'r') as file:
-            historial = json.load(file)
-        
-        # Agregar el nuevo cambio al historial
-        historial.append(cambio)
-        
-        # Guardar el historial actualizado
-        # Guardar el archivo JSON con codificación UTF-8
-        with open('data/historial.json', 'w', encoding='utf-8') as file:
-            json.dump(historial, file, ensure_ascii=False, indent=4)
+        try:
+            # Leer el historial actual
+            with open(historial_path, 'r', encoding='utf-8') as file:
+                historial = json.load(file)
+            
+            # Agregar el nuevo cambio al historial
+            historial.append(cambio)
+            
+            # Guardar el historial actualizado
+            with open(historial_path, 'w', encoding='utf-8') as file:
+                json.dump(historial, file, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"Error al guardar el historial: {e}")
 
     #DETECTAR NODOS NO CONECTADOS:
     def obtener_nodos_no_conectados(self):

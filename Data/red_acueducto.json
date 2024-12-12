@@ -30,6 +30,11 @@
             "nombre": "Casa5",
             "demanda": 40,
             "barrio": "Enea"
+        },
+        {
+            "nombre": "Casa6",
+            "demanda": 10,
+            "barrio": "Fatima"
         }
     ],
     "tanques": [
