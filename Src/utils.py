@@ -121,11 +121,10 @@ class RedDeAcueducto:
                     } for conexion in self.conexiones
                 ]
             }
-
             # Guardar en el archivo JSON
-            with open("archivo.json", encoding="utf-8") as f:
-                datos = json.load(f)
-            
+            with open(archivo_json, 'w', encoding="utf-8") as f:  # Abrir en modo escritura
+                json.dump(data, f, ensure_ascii=False, indent=4)  # Volcar los datos a JSON
+                
             print(f"Red guardada con éxito en {archivo_json}")
         except Exception as e:
             print(f"Error al guardar el archivo JSON: {e}")
@@ -373,34 +372,24 @@ class RedDeAcueducto:
         st.pyplot(fig)
 
     #AGREGAR BARRIO:
-    def agregar_barrio(self, barrio, color):
-        """
-        Agrega un nuevo barrio con un color asociado.
-        Parámetros:
-        - barrio (str): Nombre del barrio a agregar.
-        - color (str): Color asociado al barrio.
-        """
-        # Verificar si el barrio ya existe
-        if barrio in self.barrios_permitidos:
-            print(f"Error: El barrio '{barrio}' ya existe.")
-            return
-        
-        # Validar que el color sea un string válido
-        if not isinstance(color, str) or not color.strip():
-            print("Error: Debes proporcionar un color válido.")
-            return
-        
-        # Agregar el barrio con su color al diccionario de barrios
-        self.barrios_permitidos[barrio] = color
-        print(f"Barrio '{barrio}' agregado con éxito con el color '{color}'.")
+    def agregar_barrio(self, nombre, color):
+        if nombre in self.barrios_permitidos:
+            raise ValueError(f"El barrio '{nombre}' ya existe.")
+        if color in self.barrios_permitidos.values():
+            raise ValueError(f"El color '{color}' ya está en uso.")
+        self.barrios_permitidos[nombre] = color
+        print(f"Barrio '{nombre}' agregado con el color '{color}'.")
 
     #ELIMINAR BARRIO:
-    def eliminar_barrio(self, barrio):
-        if barrio not in self.barrios_permitidos:
-            print(f"Error: El barrio '{barrio}' no existe.")
-        else:
-            self.barrios_permitidos.remove(barrio)
-            print(f"Barrio '{barrio}' eliminado con éxito.")
+    def eliminar_barrio(self, nombre):
+        if nombre not in self.barrios_permitidos:
+            raise ValueError(f"El barrio '{nombre}' no existe.")
+        del self.barrios_permitidos[nombre]
+        # Actualizar casas que pertenecen a este barrio
+        for casa in self.casa.values():
+            if casa.barrio == nombre:
+                casa.barrio = None  # O reasignar a un barrio predeterminado
+        print(f"Barrio '{nombre}' eliminado.")
 
     #ENLISTAR BARRIOS:
     def listar_barrios(self):

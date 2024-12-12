@@ -2,7 +2,8 @@
     "barrios_permitidos": {
         "Fatima": "aqua",
         "Palermo": "pink",
-        "Cable": "purple"
+        "Cable": "purple",
+        "Enea": "#FFFFFF"
     },
     "casas": [
         {
@@ -24,6 +25,11 @@
             "nombre": "Casa4",
             "demanda": 0,
             "barrio": "Fatima"
+        },
+        {
+            "nombre": "Casa5",
+            "demanda": 40,
+            "barrio": "Enea"
         }
     ],
     "tanques": [

@@ -31,10 +31,12 @@ st.title("Sistema de Gestión de Red de Acueductos")
 # Barra lateral con opciones
 opcion = st.sidebar.radio(
     "Selecciona una operación",
-    ["Visualizar Red", "Agregar Casa", "Agregar Tanque", "Agregar Conexión",
-    "Eliminar Casa", "Eliminar Tanque", "Eliminar Conexión", "Simular Obstrucción",
-    "Encontrar Rutas Alternativas", "Actualizar Valores", "Cambiar Sentido de Flujo",
-    "Identificar Posiciones Óptimas"]
+    [
+        "Agregar Barrio", "Eliminar Barrio","Visualizar Red", "Agregar Casa", "Agregar Tanque", "Agregar Conexión",
+        "Eliminar Casa", "Eliminar Tanque", "Eliminar Conexión", "Simular Obstrucción",
+        "Encontrar Rutas Alternativas", "Actualizar Valores", "Cambiar Sentido de Flujo",
+        "Identificar Posiciones Óptimas"
+    ]
 )
 
 #VISUALIZAR RED:
@@ -46,22 +48,56 @@ if opcion == "Visualizar Red":
     except Exception as e:
         st.error(f"Error al visualizar la red: {e}")
 
+#AGREGAR BARRIO:
+elif opcion == "Agregar Barrio":
+    st.subheader("Agregar Barrio")
+    barrio = st.text_input("Nombre del nuevo Barrio")
+    color = st.color_picker("Selecciona el color del barrio", value="#FFFFFF")
+    if st.button("Agregar Barrio"):
+        try:
+            red.agregar_barrio(barrio, color)
+            st.write("Barrios después de agregar:", red.barrios_permitidos)  # Debugging
+            red.guardar_a_json(archivo_json)
+            st.success(f"Barrio '{barrio}' agregado exitosamente con el color '{color}'.")
+        except Exception as e:
+            st.error(f"Error al agregar el barrio: {e}")
+
+#ELIMINAR BARRIO:
+elif opcion == "Eliminar Barrio":
+    st.subheader("Eliminar Barrio")
+    barrios = list(red.barrios_permitidos.keys())
+    if barrios:
+        barrio = st.selectbox("Selecciona el barrio a eliminar", barrios)
+        if st.button("Eliminar Barrio"):
+            try:
+                red.eliminar_barrio(barrio)
+                red.guardar_a_json(archivo_json)
+                st.success(f"Barrio '{barrio}' eliminado exitosamente.")
+            except Exception as e:
+                st.error(f"Error al eliminar el barrio: {e}")
+    else:
+        st.info("No hay barrios registrados.")
+
 #AGREGAR CASA:
 elif opcion == "Agregar Casa":
     st.subheader("Agregar Casa")
     nombre = st.text_input("Nombre de la Casa")
     demanda = st.number_input("Demanda", min_value=1, step=1)
-    barrio = st.selectbox("Barrio", list(red.barrios_permitidos.keys()))
-    if st.button("Agregar Casa"):
-        try:
-            if nombre in red.casa:
-                st.error(f"Error: La casa '{nombre}' ya existe en la red.")
-            else:
-                red.agregar_casa(nombre, demanda, barrio)
-                red.guardar_a_json(archivo_json)
-                st.success("Casa agregada exitosamente.")
-        except Exception as e:
-            st.error(f"Error al agregar la casa: {e}")
+    barrios = list(red.barrios_permitidos.keys())
+    if barrios:
+        barrio = st.selectbox("Barrio", barrios)
+        if st.button("Agregar Casa"):
+            try:
+                if nombre in red.casa:
+                    st.error(f"Error: La casa '{nombre}' ya existe en la red.")
+                else:
+                    red.agregar_casa(nombre, demanda, barrio)
+                    red.guardar_a_json(archivo_json)
+                    st.success("Casa agregada exitosamente.")
+            except Exception as e:
+                st.error(f"Error al agregar la casa: {e}")
+    else:
+        st.error("No hay barrios disponibles. Agrega uno primero.")
 
 #AGREGAR TANQUE:
 elif opcion == "Agregar Tanque":
