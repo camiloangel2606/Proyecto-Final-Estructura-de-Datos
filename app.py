@@ -322,22 +322,88 @@ elif opcion == "Cambiar Sentido de Flujo":
 
 # IDENTIFICAR POSICIONES ÓPTIMAS PARA TANQUES:
 elif opcion == "Identificar Posiciones Óptimas":
-    st.subheader("Identificar Posiciones Óptimas para Tanques")
+    
+    # Transformar casas
+    red.casa = [
+        {"nombre": nombre, **vars(casa)}
+        for nombre, casa in red.casa.items()
+    ]
+
+    # Transformar tanques
+    red.tanques = [
+        {"id": tanque_id, **vars(tanque)}
+        for tanque_id, tanque in red.tanques.items()
+    ]
+
+    # Transformar conexiones
+    red.conexiones = [
+        {"origen": conexion.origen, "destino": conexion.destino, "capacidad": conexion.capacidad}
+        for conexion in red.conexiones
+    ]
+
+    st.subheader("Identificar Posiciones Óptimas para Nuevos Tanques")
+    if not isinstance(red.casa, list) or not all(isinstance(c, dict) for c in red.casa):
+        st.error("El formato de 'casas' no es válido.")
+        st.write("Casas actuales:", red.casa)
+        st.stop()
+    if not isinstance(red.tanques, list) or not all(isinstance(t, dict) for t in red.tanques):
+        st.error("El formato de 'tanques' no es válido.")
+        st.write("Tanques actuales:", red.tanques)
+        st.stop()
+    if not isinstance(red.conexiones, list) or not all(isinstance(c, dict) for c in red.conexiones):
+        st.error("El formato de 'conexiones' no es válido.")
+        st.write("Conexiones actuales:", red.conexiones)
+        st.stop()
+    if not isinstance(red.barrios_permitidos, dict):
+        st.error("El formato de 'barrios_permitidos' no es válido.")
+        st.write("Barrios permitidos actuales:", red.barrios_permitidos)
+        st.stop()
+
     try:
-        umbral_demanda = st.number_input("Ingresa el umbral de demanda mínima por barrio (ej. 50):", min_value=0.0)
-        if umbral_demanda > 0:
-            # Identificar posiciones óptimas
-            posiciones = red.identificar_posiciones_optimas_interactivo()
-            if posiciones:
-                st.write("Posiciones óptimas para nuevos tanques:")
-                for pos in posiciones:
-                    st.write(f"Barrio: {pos['barrio']}, Posición central: {pos['posicion_central']}, Demanda: {pos['demanda']}")
+        umbral_demanda = st.number_input(
+            "Ingresa el umbral mínimo de demanda para sugerir nuevos tanques:",
+            min_value=0.0,
+            value=50.0,
+            step=1.0,
+        )
+        
+        barrios_disponibles = list(red.barrios_permitidos.keys())
+        st.write("Barrios permitidos:")
+        for barrio, color in red.barrios_permitidos.items():
+            st.markdown(f"- **{barrio}**: {color}")
+        if st.button("Identificar Posiciones"):
+            st.write("Validando datos...")
+            # Validar estructura de datos
+            if not all([
+                isinstance(red.casa, list),
+                isinstance(red.tanques, list),
+                isinstance(red.conexiones, list),
+                isinstance(red.barrios_permitidos, dict)
+            ]):
+                st.error("Los datos de la red no tienen el formato esperado.")
+                st.stop()
+            sugerencias = red.identificar_posiciones_optimas(
+                red.casa,
+                red.tanques,
+                red.conexiones,
+                red.barrios_permitidos,
+                umbral_demanda=umbral_demanda,
+            )
+            if sugerencias:
+                st.success("Se han identificado posiciones óptimas para nuevos tanques:")
+                for sugerencia in sugerencias:
+                    st.markdown(
+                        f"""
+                        - **Barrio:** {sugerencia['barrio']}
+                        - **Posición Central:** {sugerencia['posicion_central']}
+                        - **Demanda Total:** {sugerencia['demanda']}
+                        - **Color del Barrio:** {sugerencia['color']}
+                        """
+                    )
             else:
-                st.error("No se encontraron posiciones óptimas con los parámetros proporcionados.")
-        else:
-            st.error("El umbral de demanda debe ser un valor positivo.")
+                st.warning("No se encontraron posiciones óptimas basadas en los parámetros actuales.")
     except Exception as e:
-        st.error(f"Error al identificar posiciones óptimas: {e}")
+        st.error(f"Ha ocurrido un error al identificar posiciones óptimas: {e}")
 
 # GUARDAR CAMBIOS
 if st.sidebar.button("Guardar Cambios"):

@@ -1,6 +1,6 @@
 {
     "barrios_permitidos": {
-        "F\u00c3\u00a1tima": "aqua",
+        "Fatima": "aqua",
         "Palermo": "pink",
         "Cable": "purple"
     },
@@ -8,7 +8,7 @@
         {
             "nombre": "Casa1",
             "demanda": 0,
-            "barrio": "F\u00c3\u00a1tima"
+            "barrio": "Fatima"
         },
         {
             "nombre": "Casa2",
@@ -23,7 +23,7 @@
         {
             "nombre": "Casa4",
             "demanda": 0,
-            "barrio": "F\u00c3\u00a1tima"
+            "barrio": "Fatima"
         }
     ],
     "tanques": [
@@ -43,7 +43,7 @@
             "id": "Tanque3",
             "capacidad": 400,
             "nivel_actual": 100,
-            "barrio": "F\u00c3\u00a1tima"
+            "barrio": "Fatima"
         }
     ],
     "conexiones": [
